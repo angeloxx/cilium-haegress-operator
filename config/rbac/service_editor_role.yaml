@@ -1,0 +1,31 @@
+# permissions for end users to edit services.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: service-editor-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: kube-vip-cilium-watcher
+    app.kubernetes.io/part-of: kube-vip-cilium-watcher
+    app.kubernetes.io/managed-by: kustomize
+  name: service-editor-role
+rules:
+- apiGroups:
+  - angeloxx.ch
+  resources:
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - angeloxx.ch
+  resources:
+  - services/status
+  verbs:
+  - get
