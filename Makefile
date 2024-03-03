@@ -15,7 +15,8 @@ ifneq ($(shell git status --porcelain),)
 	VERSION := $(VERSION)-dirty
 endif
 
-IMAGE_TAG_BASE ?= angeloxx/kube-vip-cilium-watcher
+IMAGE_REGISTRY_NAMESPACE ?= angeloxx
+IMAGE_TAG_BASE ?= $(IMAGE_REGISTRY_NAMESPACE)/kube-vip-cilium-watcher
 IMAGE_REGISTRY ?= docker.io
 BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
 BUNDLE_GEN_FLAGS ?= -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
@@ -123,7 +124,7 @@ docker-push: ## Push docker image with the manager.
 	$(CONTAINER_TOOL) push ${IMG}
 
 
-PLATFORMS ?= linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
+PLATFORMS ?= linux/arm64,linux/amd64
 .PHONY: build-image
 build-image: ko
 	KO_DOCKER_REPO=${IMAGE} \
@@ -131,7 +132,7 @@ build-image: ko
     ko build --tags ${VERSION} --bare --sbom ${IMG_SBOM} \
       --image-label org.opencontainers.image.source="https://github.com/angeloxx/kube-vip-cilium-watcher" \
       --image-label org.opencontainers.image.revision=$(shell git rev-parse HEAD) \
-      --platform=linux/amd64  --push=true .
+      --platform=${PLATFORMS}  --push=true .
 
 ##@ Deployment
 
@@ -270,7 +271,13 @@ catalog-push: ## Push a catalog image.
 ko:
 	scripts/install-ko.sh
 
-.PHONY: helm
-helm:
-	exit 0
+.PHONY: build-helm
+build-helm:
+	helm package charts/kube-vip-cilium-watcher -d helm/charts
+	helm repo index charts/charts --url https://angeloxx.github.io/kube-vip-cilium-watcher
+
+.PHONY: build-helm-upload
+build-helm-upload: build-helm
+	helm push helm/charts/kube-vip-cilium-watcher-0.1.0.tgz \
+		oci://registry-1.docker.io/$(IMAGE_REGISTRY_NAMESPACE)
 
