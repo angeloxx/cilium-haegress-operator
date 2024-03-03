@@ -22,7 +22,7 @@ type ServiceReconciler struct {
 
 const (
 	serviceMustBeWatched = "kube-vip.io/cilium-egress-watcher"
-	kubeVipAnnotation    = "kube-vip.io/host"
+	kubeVipAnnotation    = "kube-vip.io/vipHost"
 )
 
 // Reconcile handles a reconciliation request for a Service with the
@@ -95,7 +95,6 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				logger.Errorf("unable to patch cilium egress gateway policy %s", egressPolicy.Name)
 				return ctrl.Result{}, err
 			}
-			return ctrl.Result{}, nil
 		}
 	}
 
