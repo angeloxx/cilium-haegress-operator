@@ -1,5 +1,5 @@
 
-
+CONTAINER_TOOL=ko
 TAG_COMMIT := $(shell git rev-list --abbrev-commit --tags --max-count=1)
 TAG := $(shell git describe --abbrev=0 --tags ${TAG_COMMIT} 2>/dev/null || true)
 COMMIT := $(shell git rev-parse --short HEAD)
@@ -15,12 +15,11 @@ ifneq ($(shell git status --porcelain),)
 	VERSION := $(VERSION)-dirty
 endif
 
-
-# VERSION ?= 0.0.1
 IMAGE_TAG_BASE ?= angeloxx/kube-vip-cilium-watcher
+IMAGE_REGISTRY ?= docker.io
 BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
 BUNDLE_GEN_FLAGS ?= -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
-
+IMAGE ?= $(IMAGE_REGISTRY)/$(IMAGE_TAG_BASE)
 
 
 CURRENT_TAG_MICRO  := "v$(CURRENT_VERSION_MICRO)"
@@ -40,8 +39,6 @@ endif
 # This is useful for CI or a project to utilize a specific version of the operator-sdk toolkit.
 OPERATOR_SDK_VERSION ?= v1.33.0
 
-# Image URL to use all building/pushing image targets
-IMG ?= controller:latest
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.27.1
 
@@ -52,11 +49,6 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
-# CONTAINER_TOOL defines the container tool to be used for building images.
-# Be aware that the target commands are only tested with Docker which is
-# scaffolded by default. However, you might want to replace it to use other
-# tools. (i.e. podman)
-CONTAINER_TOOL ?= docker
 
 # Setting SHELL to bash allows bash commands to be executed by recipes.
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
@@ -277,4 +269,8 @@ catalog-push: ## Push a catalog image.
 .PHONY: ko
 ko:
 	scripts/install-ko.sh
+
+.PHONY: helm
+helm:
+	exit 0
 

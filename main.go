@@ -64,6 +64,7 @@ func main() {
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
+	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 	// ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	if logFormat == "json" {
@@ -104,7 +105,7 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		log.Error("Unable to create controller", "controller", "Service")
+		log.Error("Unable to create controller")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

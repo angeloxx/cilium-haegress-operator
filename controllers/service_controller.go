@@ -49,7 +49,7 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	logger := log.WithFields(
 		log.Fields{
 			"namespace": req.Namespace,
-			"name":      req.Name,
+			"service":   req.Name,
 		})
 
 	serviceShouldBeChecked := service.Annotations[serviceMustBeWatched] == "true"
@@ -66,8 +66,13 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	host := service.Annotations[kubeVipAnnotation]
 
 	// Check if the service has a loadBalancerIP or loadBalancerIPs
-	if service.Spec.LoadBalancerIP != "" {
-		ips = append(ips, service.Spec.LoadBalancerIP)
+	if service.Status.LoadBalancer.Ingress == nil {
+		logger.Debug("service doesn't have an assigned IP address, ignoring")
+		return ctrl.Result{}, nil
+	}
+
+	for _, ingress := range service.Status.LoadBalancer.Ingress {
+		ips = append(ips, ingress.IP)
 	}
 
 	if len(ips) == 0 {
@@ -75,7 +80,7 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, nil
 	}
 
-	log.Infof("has the annotation, ips are %s, checking if a cilium egress must be modified",
+	logger.Infof("has the annotation, ips are %s, checking if a cilium egress must be modified",
 		strings.Join(ips[:], ","))
 
 	// get all cilium egress gateway policies from api server
@@ -84,7 +89,7 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		logger.Error(err, "unable to list cilium egress gateway policies")
 		return ctrl.Result{}, err
 	}
-	log.Infof("Found %d Cilium egress gateway policies to evaluate", len(egressPolicies.Items))
+	logger.Infof("Found %d Cilium egress gateway policies to evaluate", len(egressPolicies.Items))
 	for _, egressPolicy := range egressPolicies.Items {
 		if slices.Contains(ips, egressPolicy.Spec.EgressGateway.EgressIP) {
 			// Modify egressPolicy nodeSepector to match the service
