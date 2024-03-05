@@ -10,6 +10,7 @@ rules:
   - ciliumegressgatewaypolicies
   verbs:
   - get
+  - list
   - patch
   - update
 - apiGroups:

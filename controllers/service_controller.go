@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	kubevipciliumwatcher "github.com/angeloxx/kube-vip-cilium-watcher/pkg"
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
@@ -19,11 +20,6 @@ type ServiceReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
-
-const (
-	serviceMustBeWatched = "kube-vip.io/cilium-egress-watcher"
-	kubeVipAnnotation    = "kube-vip.io/vipHost"
-)
 
 // Reconcile handles a reconciliation request for a Service with the
 // kube-vip-cilium-watcher annotation.
@@ -52,18 +48,18 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			"service":   req.Name,
 		})
 
-	serviceShouldBeChecked := service.Annotations[serviceMustBeWatched] == "true"
+	serviceShouldBeChecked := service.Annotations[kubevipciliumwatcher.ServiceMustBeWatched] == "true"
 	if !serviceShouldBeChecked {
 		logger.Debug("Service does not have the annotation, ignoring")
 		return ctrl.Result{}, nil
 	}
 
-	serviceHasHostAssociated := service.Annotations[kubeVipAnnotation] != ""
+	serviceHasHostAssociated := service.Annotations[kubevipciliumwatcher.KubeVipAnnotation] != ""
 	if !serviceHasHostAssociated {
 		logger.Debug("service doesn't have a host associated, ignoring")
 		return ctrl.Result{}, nil
 	}
-	host := service.Annotations[kubeVipAnnotation]
+	host := service.Annotations[kubevipciliumwatcher.KubeVipAnnotation]
 
 	// Check if the service has a loadBalancerIP or loadBalancerIPs
 	if service.Status.LoadBalancer.Ingress == nil {
@@ -86,7 +82,7 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// get all cilium egress gateway policies from api server
 	var egressPolicies ciliumv2.CiliumEgressGatewayPolicyList
 	if err := r.List(ctx, &egressPolicies); err != nil {
-		logger.Error(err, "unable to list cilium egress gateway policies")
+		logger.Error(err, "unable to list cilium egress gateway policies, check RBAC permissions")
 		return ctrl.Result{}, err
 	}
 	logger.Infof("Found %d Cilium egress gateway policies to evaluate", len(egressPolicies.Items))

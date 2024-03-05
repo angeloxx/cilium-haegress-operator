@@ -18,18 +18,20 @@ package main
 
 import (
 	"flag"
-	"github.com/angeloxx/kube-vip-cilium-watcher/controllers"
+	"os"
+
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+
+	"github.com/angeloxx/kube-vip-cilium-watcher/controllers"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -105,7 +107,14 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		log.Error("Unable to create controller")
+		log.Error("Unable to create controller Service")
+		os.Exit(1)
+	}
+	if err = (&controllers.CiliumEgressGatewayPolicyReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		log.Error("unable to create controller CiliumEgressGatewayPolicy")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
