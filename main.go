@@ -18,7 +18,6 @@ package main
 
 import (
 	"flag"
-	log "github.com/sirupsen/logrus"
 	"os"
 
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
@@ -37,8 +36,8 @@ import (
 )
 
 var (
-	scheme = runtime.NewScheme()
-	//setupLog = log.WithName("setup")
+	scheme   = runtime.NewScheme()
+	setupLog = ctrl.Log.WithName("setup")
 )
 
 func init() {
@@ -67,12 +66,6 @@ func main() {
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
-	ll, err := log.ParseLevel(logLevel)
-	if err != nil {
-		log.Fatalf("failed to parse log level: %v", err)
-	}
-	log.SetLevel(ll)
-
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 	// ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
@@ -83,7 +76,7 @@ func main() {
 		},
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "488f1a89.angeloxx.ch",
+		LeaderElectionID:       "kube-vip-cilium-observer.angeloxx.ch",
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
 		// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly
@@ -97,7 +90,7 @@ func main() {
 		// LeaderElectionReleaseOnCancel: true,
 	})
 	if err != nil {
-		log.Error("unable to start manager")
+		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
 
@@ -106,7 +99,7 @@ func main() {
 		Log:    ctrl.Log.WithName("controllers").WithName("Service"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		log.Error("Unable to create controller Service")
+		setupLog.Error(err, "Unable to create controller Service")
 		os.Exit(1)
 	}
 	if err = (&controllers.CiliumEgressGatewayPolicyReconciler{
@@ -114,23 +107,23 @@ func main() {
 		Log:    ctrl.Log.WithName("controllers").WithName("CiliumEgressGatewayPolicy"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		log.Error("unable to create controller CiliumEgressGatewayPolicy")
+		setupLog.Error(err, "unable to create controller CiliumEgressGatewayPolicy")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		log.Error("Unable to set up health check")
+		setupLog.Error(err, "Unable to set up health check")
 		os.Exit(1)
 	}
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		log.Error("Unable to set up ready check")
+		setupLog.Error(err, "Unable to set up ready check")
 		os.Exit(1)
 	}
 
-	log.Info("starting manager")
+	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		log.Error("Problem running manager")
+		setupLog.Error(err, "Problem running manager")
 		os.Exit(1)
 	}
 }
