@@ -19,4 +19,9 @@ resources:
   kind: Service
   path: github.com/angeloxx/kube-vip-cilium-watcher/api/v1
   version: v1
+- controller: true
+  domain: angeloxx.ch
+  group: angeloxx.ch
+  kind: CiliumEgressGatewayPolicy
+  version: v2
 version: "3"

@@ -25,3 +25,5 @@ Dockerfile.cross
 *.swp
 *.swo
 *~
+
+output-dir/
