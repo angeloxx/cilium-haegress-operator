@@ -18,10 +18,11 @@ package main
 
 import (
 	"flag"
+	log "github.com/sirupsen/logrus"
 	"os"
 
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
-	log "github.com/sirupsen/logrus"
+	//log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -66,17 +67,14 @@ func main() {
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
-	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
-	// ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
-
-	if logFormat == "json" {
-		log.SetFormatter(&log.JSONFormatter{})
-	}
 	ll, err := log.ParseLevel(logLevel)
 	if err != nil {
 		log.Fatalf("failed to parse log level: %v", err)
 	}
 	log.SetLevel(ll)
+
+	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+	// ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
@@ -105,6 +103,7 @@ func main() {
 
 	if err = (&controllers.ServiceReconciler{
 		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Service"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		log.Error("Unable to create controller Service")
@@ -112,6 +111,7 @@ func main() {
 	}
 	if err = (&controllers.CiliumEgressGatewayPolicyReconciler{
 		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("CiliumEgressGatewayPolicy"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		log.Error("unable to create controller CiliumEgressGatewayPolicy")

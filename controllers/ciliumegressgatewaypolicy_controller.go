@@ -21,11 +21,11 @@ import (
 	"fmt"
 	"github.com/angeloxx/kube-vip-cilium-watcher/pkg"
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 
-	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -35,6 +35,7 @@ import (
 // CiliumEgressGatewayPolicyReconciler reconciles a CiliumEgressGatewayPolicy object
 type CiliumEgressGatewayPolicyReconciler struct {
 	client.Client
+	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
 
@@ -53,6 +54,7 @@ type CiliumEgressGatewayPolicyReconciler struct {
 func (r *CiliumEgressGatewayPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	var egressPolicy ciliumv2.CiliumEgressGatewayPolicy
 	var ips []string
+	var log = r.Log
 
 	if err := r.Get(ctx, req.NamespacedName, &egressPolicy); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -64,40 +66,33 @@ func (r *CiliumEgressGatewayPolicyReconciler) Reconcile(ctx context.Context, req
 		log.Error(err, "unable to fetch Service")
 		return ctrl.Result{}, err
 	}
-	logger := log.WithFields(
-		log.Fields{
-			"egressgatewaypolicy": req.Name,
-		})
+	logger := log.WithValues("egressgatewaypolicy", req.Name)
 
 	// When a new policy is configured and matches a kube-vip service we have to patch it
 	// 	patchData := fmt.Sprintf(`{"spec":{"egressGateway":{"nodeSelector":{"matchLabels":{"kube-vip.io/host":"%s"}}}}}`, host)
 
-	logger.Infof("EgressGatewayPolicy has IP %s, checking for services", egressPolicy.Spec.EgressGateway.EgressIP)
+	logger.Info(fmt.Sprintf("EgressGatewayPolicy has IP %s, checking for services", egressPolicy.Spec.EgressGateway.EgressIP))
 
 	// Get the list of all matching services and determine current kube-vio.io/vipHost that runs that IP
 	var services = corev1.ServiceList{}
 	if err := r.List(ctx, &services); err != nil {
-		logger.Error(err, "unable to list services, check RBAC permissions")
+		logger.Error(err, "Unable to list services, check RBAC permissions")
 		return ctrl.Result{}, err
 	}
 
-	logger.Infof("Found %d Services to evaluate", len(services.Items))
+	logger.Info(fmt.Sprintf("Found %d Services to evaluate", len(services.Items)))
 	for _, service := range services.Items {
-		serviceLogger := logger.WithFields(
-			log.Fields{
-				"service":   service.Name,
-				"namespace": service.Namespace,
-			})
+		serviceLogger := logger.WithValues("service", service.Name, "namespace", service.Namespace)
 
 		serviceShouldBeChecked := service.Annotations[kubevipciliumwatcher.ServiceMustBeWatched] == "true"
 		if !serviceShouldBeChecked {
-			serviceLogger.Debug("Service does not have the annotation, ignoring")
+			serviceLogger.V(1).Info("Service does not have the annotation, ignoring")
 			continue
 		}
 
 		serviceHasHostAssociated := service.Annotations[kubevipciliumwatcher.KubeVipAnnotation] != ""
 		if !serviceHasHostAssociated {
-			serviceLogger.Debug("service doesn't have a host associated, ignoring")
+			serviceLogger.V(1).Info("service doesn't have a host associated, ignoring")
 			continue
 		}
 		host := service.Annotations[kubevipciliumwatcher.KubeVipAnnotation]
@@ -107,7 +102,7 @@ func (r *CiliumEgressGatewayPolicyReconciler) Reconcile(ctx context.Context, req
 		}
 
 		if len(ips) == 0 {
-			serviceLogger.Debug("service has the annotation but no loadBalancerIP(s), ignoring")
+			serviceLogger.V(1).Info("Service has the annotation but no loadBalancerIP(s), ignoring")
 			continue
 		}
 
@@ -120,9 +115,9 @@ func (r *CiliumEgressGatewayPolicyReconciler) Reconcile(ctx context.Context, req
 			// Modify egressPolicy nodeSepector to match the service
 			patchData := fmt.Sprintf(`{"spec":{"egressGateway":{"nodeSelector":{"matchLabels":{"%s":"%s"}}}}}`, kubevipciliumwatcher.EgressVipAnnotation, host)
 
-			serviceLogger.Infof("Patching cilium egress gateway policy %s with host %s", egressPolicy.Name, host)
+			serviceLogger.Info(fmt.Sprintf("Patching cilium egress gateway policy %s with host %s", egressPolicy.Name, host))
 			if err := r.Patch(ctx, &egressPolicy, client.RawPatch(types.MergePatchType, []byte(patchData))); err != nil {
-				serviceLogger.Errorf("unable to patch cilium egress gateway policy %s", egressPolicy.Name)
+				serviceLogger.Error(err, fmt.Sprintf("Unable to patch cilium egress gateway policy %s", egressPolicy.Name))
 				return ctrl.Result{}, err
 			}
 		}
