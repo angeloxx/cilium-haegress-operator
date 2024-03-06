@@ -51,7 +51,6 @@ type CiliumEgressGatewayPolicyReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.15.0/pkg/reconcile
 func (r *CiliumEgressGatewayPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-
 	var egressPolicy ciliumv2.CiliumEgressGatewayPolicy
 	var ips []string
 
@@ -73,10 +72,7 @@ func (r *CiliumEgressGatewayPolicyReconciler) Reconcile(ctx context.Context, req
 	// When a new policy is configured and matches a kube-vip service we have to patch it
 	// 	patchData := fmt.Sprintf(`{"spec":{"egressGateway":{"nodeSelector":{"matchLabels":{"kube-vip.io/host":"%s"}}}}}`, host)
 
-	if egressPolicy.Spec.EgressGateway.NodeSelector.MatchLabels[kubevipciliumwatcher.KubeVipAnnotation] != "" {
-		logger.Debug("EgressGatewayPolicy already has an assigned vip host, ignoring.")
-		return ctrl.Result{}, nil
-	}
+	logger.Infof("EgressGatewayPolicy has IP %s, checking for services", egressPolicy.Spec.EgressGateway.EgressIP)
 
 	// Get the list of all matching services and determine current kube-vio.io/vipHost that runs that IP
 	var services = corev1.ServiceList{}
@@ -96,13 +92,13 @@ func (r *CiliumEgressGatewayPolicyReconciler) Reconcile(ctx context.Context, req
 		serviceShouldBeChecked := service.Annotations[kubevipciliumwatcher.ServiceMustBeWatched] == "true"
 		if !serviceShouldBeChecked {
 			serviceLogger.Debug("Service does not have the annotation, ignoring")
-			break
+			continue
 		}
 
 		serviceHasHostAssociated := service.Annotations[kubevipciliumwatcher.KubeVipAnnotation] != ""
 		if !serviceHasHostAssociated {
 			serviceLogger.Debug("service doesn't have a host associated, ignoring")
-			break
+			continue
 		}
 		host := service.Annotations[kubevipciliumwatcher.KubeVipAnnotation]
 
@@ -112,12 +108,17 @@ func (r *CiliumEgressGatewayPolicyReconciler) Reconcile(ctx context.Context, req
 
 		if len(ips) == 0 {
 			serviceLogger.Debug("service has the annotation but no loadBalancerIP(s), ignoring")
-			break
+			continue
 		}
 
 		if slices.Contains(ips, egressPolicy.Spec.EgressGateway.EgressIP) {
+			if egressPolicy.Spec.EgressGateway.NodeSelector.MatchLabels[kubevipciliumwatcher.EgressVipAnnotation] == host {
+				logger.Info("EgressGatewayPolicy already configured as expected, ignoring.")
+				return ctrl.Result{}, nil
+			}
+
 			// Modify egressPolicy nodeSepector to match the service
-			patchData := fmt.Sprintf(`{"spec":{"egressGateway":{"nodeSelector":{"matchLabels":{"kube-vip.io/host":"%s"}}}}}`, host)
+			patchData := fmt.Sprintf(`{"spec":{"egressGateway":{"nodeSelector":{"matchLabels":{"%s":"%s"}}}}}`, kubevipciliumwatcher.EgressVipAnnotation, host)
 
 			serviceLogger.Infof("Patching cilium egress gateway policy %s with host %s", egressPolicy.Name, host)
 			if err := r.Patch(ctx, &egressPolicy, client.RawPatch(types.MergePatchType, []byte(patchData))); err != nil {
