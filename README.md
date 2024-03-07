@@ -1,81 +1,35 @@
 # kube-vip-cilium-watcher
-This Go program serves as a dynamic watcher for the association of Kubernetes services with nodes via L2 ARP announcements by kube-vip. Its primary function is to detect when a service is associated with a node and subsequently annotate the corresponding CiliumEgressPolicy to select that node for public IP access.
-
+This operator is used in an environment where you want to use Cilium as Ingress and Egress traffic manager. 
 
 ## Description
-This project is a Kubernetes operator that watches for the association of services with nodes via L2 ARP announcements by kube-vip. When a service is associated with a node, the operator annotates the corresponding CiliumEgressPolicy to select that node for public IP access.
+Due the limitation of CiliumEgressGatewayPolicy, it is not possible to implement freely an HA solution where the policy defines
+two egress IP or the IP is moved automatically from a node to another.
+You can use kube-vip to create a virtual IP that is moved from a node to another in case of failure. When kube-vip
+associate a service to a node, it annotates associated service with kube-vip.io/vipHost: <node-name>. This operator
+watches for this annotation and updates the CiliumEgressPolicy to select the node where the service is running and
+implement a floating egress ip.
 
-## Getting Started
-You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or run against a remote cluster.
-**Note:** Your controller will automatically use the current context in your kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
+## Installation
 
-### Running on the cluster
-1. Install Instances of Custom Resources:
+Helm chart will be provided.
 
-```sh
-kubectl apply -f config/samples/
-```
+## Configure
 
-2. Build and push your image to the location specified by `IMG`:
+Configure the service as a virtual ip managed by kuve-vip. The service must be of type LoadBalancer and set
 
-```sh
-make docker-build docker-push IMG=<some-registry>/kube-vip-cilium-watcher:tag
-```
+    spec.loadBalancerClass: "kube-vip.io/kube-vip-class"
 
-3. Deploy the controller to the cluster with the image specified by `IMG`:
+in order to let kube-vip manage the service. Additionally the annotation:
 
-```sh
-make deploy IMG=<some-registry>/kube-vip-cilium-watcher:tag
-```
+    kube-vip.io/cilium-egress-watcher: "true"
 
-### Uninstall CRDs
-To delete the CRDs from the cluster:
+has to be added to the service. You have to add to all nodes that runs kube-vip the label:
 
-```sh
-make uninstall
-```
+    kube-vip.io/vipHost: "<host-shortname>"
 
-### Undeploy controller
-UnDeploy the controller from the cluster:
-
-```sh
-make undeploy
-```
-
-## Contributing
-// TODO(user): Add detailed information on how you would like others to contribute to this project
-
-### How it works
-This project aims to follow the Kubernetes [Operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/).
-
-It uses [Controllers](https://kubernetes.io/docs/concepts/architecture/controller/),
-which provide a reconcile function responsible for synchronizing resources until the desired state is reached on the cluster.
-
-### Test It Out
-1. Install the CRDs into the cluster:
-
-```sh
-make install
-```
-
-2. Run your controller (this will run in the foreground, so switch to a new terminal if you want to leave it running):
-
-```sh
-make run
-```
-
-**NOTE:** You can also run this in one step by running: `make install run`
-
-### Modifying the API definitions
-If you are editing the API definitions, generate the manifests such as CRs or CRDs using:
-
-```sh
-make manifests
-```
-
-**NOTE:** Run `make --help` for more information on all potential `make` targets
-
-More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
+The CiliumEgressGatewayPolicy(es) that matches the service loadBalancerIps with spec.egressGateway.egressIP will
+be reconfigured with a spec.egressGateway.nodeSelector that matches the "kube-vip.io/vipHost" label in order to 
+route the traffic to that node.
 
 ## License
 
