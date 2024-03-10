@@ -95,7 +95,7 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			// Modify egressPolicy nodeSepector to match the service
 			patchData := fmt.Sprintf(`{"spec":{"egressGateway":{"nodeSelector":{"matchLabels":{"%s":"%s"}}}}}`, kubevipciliumwatcher.EgressVipAnnotation, host)
 
-			logger.V(0).Info("Patching cilium egress gateway policy %s with host %s", egressPolicy.Name, host)
+			logger.V(0).Info(fmt.Sprintf("Patching cilium egress gateway policy %s with host %s", egressPolicy.Name, host))
 			if err := r.Patch(ctx, &egressPolicy, client.RawPatch(types.MergePatchType, []byte(patchData))); err != nil {
 				logger.V(0).Info("unable to patch cilium egress gateway policy %s", egressPolicy.Name)
 				return ctrl.Result{}, err

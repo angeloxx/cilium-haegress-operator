@@ -25,7 +25,7 @@ in order to let kube-vip manage the service. Additionally the annotation:
 
 has to be added to the service. You have to add to all nodes that runs kube-vip the label:
 
-    kube-vip.io/vipHost: "<host-shortname>"
+    kube-vip.io/host: "<host-shortname>"
 
 The CiliumEgressGatewayPolicy(es) that matches the service loadBalancerIps with spec.egressGateway.egressIP will
 be reconfigured with a spec.egressGateway.nodeSelector that matches the "kube-vip.io/vipHost" label in order to 
