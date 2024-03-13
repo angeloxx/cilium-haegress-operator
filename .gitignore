@@ -27,3 +27,5 @@ Dockerfile.cross
 *~
 
 output-dir/
+
+helm/charts/*.tgz
