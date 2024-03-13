@@ -1,4 +1,4 @@
-![Logo](docs/img/kube-vip-cilium-watcher_mini.png)
+![Logo](https://github.com/angeloxx/kube-vip-cilium-watcher/raw/implement-helm/docs/img/kube-vip-cilium-watcher_mini.png)
 
 # kube-vip-cilium-watcher
 This operator is used in an environment where you want to use Cilium as Ingress and Egress traffic manager. 
@@ -17,7 +17,7 @@ Helm chart will be provided.
 
 ## Configure
 
-Configure the service as a virtual ip managed by kuve-vip. The service must be of type LoadBalancer and set
+Configure the service as a virtual ip managed by kuve-vip. The **Service** must be of type **LoadBalancer** and set
 
     spec.loadBalancerClass: "kube-vip.io/kube-vip-class"
 
@@ -25,13 +25,64 @@ in order to let kube-vip manage the service. Additionally the annotation:
 
     kube-vip.io/cilium-egress-watcher: "true"
 
-has to be added to the service. You have to add to all nodes that runs kube-vip the label:
+has to be added to the **Service**. You have to add to **all nodes that runs kube-vip** the label:
 
     kube-vip.io/host: "<host-shortname>"
 
 The CiliumEgressGatewayPolicy(es) that matches the service loadBalancerIps with spec.egressGateway.egressIP will
-be reconfigured with a spec.egressGateway.nodeSelector that matches the "kube-vip.io/vipHost" label in order to 
+be reconfigured with a spec.egressGateway.nodeSelector that matches the "kube-vip.io/host" label in order to 
 route the traffic to that node.
+
+### Sample
+
+A sample service is:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: egress-192-168-1-1
+  namespace: kube-vip-tier-1
+  annotations:
+    kube-vip.io/cilium-egress-watcher: "true"
+spec:
+  type: LoadBalancer
+  loadBalancerClass: kube-vip.io/kube-vip-class 
+  loadBalancerIP: 192.168.1.1
+  selector:
+    app: pleaseDontMatch
+  ports: []
+```
+
+and create the load balancer, managed by kube-vip, with the selected IP as egress. I suggest to create dedicate a namespace
+to kube-vip instance (or more instances, if you have to publish these services in different networks) and create the
+services in that namespace. The annotation activate the watcher for the service.
+
+A sample CiliumEgressGatewayPolicy is:
+
+```yaml
+apiVersion: cilium.io/v2
+kind: CiliumEgressGatewayPolicy
+metadata:
+  name: external-dns
+spec:
+  selectors:
+  - podSelector:
+      matchLabels:
+        io.kubernetes.pod.namespace: external-dns
+  destinationCIDRs:
+  - "0.0.0.0/0"
+
+  egressGateway:
+    nodeSelector:
+      matchLabels:
+        my/nodes: egress-nodes
+    egressIP: 192.168.1.1
+```
+
+When kube-vip assigns the IP to a node, the kube-vip-cilium-watcher operator will update the egressGateway.nodeSelector in 
+order to match the node, using kube-vip.io/host label. You can associate multiple CiliumEgressGatewayPolicy to the same
+IP, the operator will support all of them.
 
 ## License
 
