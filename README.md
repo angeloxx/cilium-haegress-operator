@@ -1,4 +1,4 @@
-![Logo](https://github.com/angeloxx/kube-vip-cilium-watcher/raw/implement-helm/docs/img/kube-vip-cilium-watcher_mini.png)
+![Logo](https://github.com/angeloxx/kube-vip-cilium-watcher/raw/main/docs/img/kube-vip-cilium-watcher_mini.png)
 
 # kube-vip-cilium-watcher
 This operator is used in an environment where you want to use Cilium as Ingress and Egress traffic manager. 
@@ -16,7 +16,7 @@ implement a floating egress ip.
 You can use Helm and the default settings to install the operator:
 
 ```shell
-helm upgrade -i kube-vip-watcher --create-namespace --namespace kube-vip-watcher oci://registry-1.docker.io/angeloxx/kube-vip-cilium-watcher --version 0.0.5 
+helm upgrade -i kube-vip-watcher --create-namespace --namespace kube-vip-watcher oci://registry-1.docker.io/angeloxx/kube-vip-cilium-watcher --version 0.0.6 
 ```
 
 ## Configure
