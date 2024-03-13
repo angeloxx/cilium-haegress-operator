@@ -1,3 +1,5 @@
+![Logo](docs/img/kube-vip-cilium-watcher_mini.png)
+
 # kube-vip-cilium-watcher
 This operator is used in an environment where you want to use Cilium as Ingress and Egress traffic manager. 
 
