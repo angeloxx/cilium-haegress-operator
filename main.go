@@ -93,17 +93,19 @@ func main() {
 	}
 
 	if err = (&controllers.ServiceReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Service"),
-		Scheme: mgr.GetScheme(),
+		Client:   mgr.GetClient(),
+		Log:      ctrl.Log.WithName("controllers").WithName("Service"),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("kube-vip-cilium-watcher"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Unable to create controller Service")
 		os.Exit(1)
 	}
 	if err = (&controllers.CiliumEgressGatewayPolicyReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("CiliumEgressGatewayPolicy"),
-		Scheme: mgr.GetScheme(),
+		Client:   mgr.GetClient(),
+		Log:      ctrl.Log.WithName("controllers").WithName("CiliumEgressGatewayPolicy"),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("kube-vip-cilium-watcher"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller CiliumEgressGatewayPolicy")
 		os.Exit(1)

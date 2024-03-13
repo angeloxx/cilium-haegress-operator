@@ -11,6 +11,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
@@ -18,8 +19,9 @@ import (
 
 type ServiceReconciler struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Log      logr.Logger
+	Scheme   *runtime.Scheme
+	Recorder record.EventRecorder
 }
 
 // Reconcile handles a reconciliation request for a Service with the
@@ -28,6 +30,7 @@ type ServiceReconciler struct {
 
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;update;patch
 // +kubebuilder:rbac:groups=cilium.io,resources=ciliumegressgatewaypolicies,verbs=get;update;patch
+// +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
 func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	var service corev1.Service
@@ -83,10 +86,12 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		logger.Error(err, "unable to list cilium egress gateway policies, check RBAC permissions")
 		return ctrl.Result{}, err
 	}
+	var foundEgress = false
 	logger.V(0).Info(fmt.Sprintf("Found %d Cilium egress gateway policies to evaluate", len(egressPolicies.Items)))
 	for _, egressPolicy := range egressPolicies.Items {
-		if slices.Contains(ips, egressPolicy.Spec.EgressGateway.EgressIP) {
 
+		if slices.Contains(ips, egressPolicy.Spec.EgressGateway.EgressIP) {
+			foundEgress = true
 			if egressPolicy.Spec.EgressGateway.NodeSelector.MatchLabels[kubevipciliumwatcher.EgressVipAnnotation] == host {
 				logger.Info("EgressGatewayPolicy already configured as expected, ignoring.")
 				continue
@@ -100,7 +105,13 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				logger.V(0).Info("unable to patch cilium egress gateway policy %s", egressPolicy.Name)
 				return ctrl.Result{}, err
 			}
+			r.Recorder.Event(&egressPolicy, "Normal", kubevipciliumwatcher.EventEgressUpdateReason, fmt.Sprintf("Updated with new nodeSelector %s=%s by %s/%s service", kubevipciliumwatcher.EgressVipAnnotation, host, req.Namespace, req.Name))
+			r.Recorder.Event(&service, "Normal", kubevipciliumwatcher.EventServiceUpdateReason, fmt.Sprintf("Updated Cilium egress gateway policy %s with new nodeSelector %s=%s", egressPolicy.Name, kubevipciliumwatcher.EgressVipAnnotation, host))
 		}
+	}
+
+	if !foundEgress {
+		r.Recorder.Event(&service, "Warning", kubevipciliumwatcher.EventServiceNotFoundReason, fmt.Sprintf("Unable to find a Cilium Egress Gateway Policy for the service"))
 	}
 
 	return ctrl.Result{}, nil
