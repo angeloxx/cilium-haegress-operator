@@ -25,6 +25,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 
 	"golang.org/x/exp/slices"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -35,8 +36,9 @@ import (
 // CiliumEgressGatewayPolicyReconciler reconciles a CiliumEgressGatewayPolicy object
 type CiliumEgressGatewayPolicyReconciler struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Log      logr.Logger
+	Scheme   *runtime.Scheme
+	Recorder record.EventRecorder
 }
 
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;update;patch
@@ -120,6 +122,8 @@ func (r *CiliumEgressGatewayPolicyReconciler) Reconcile(ctx context.Context, req
 				serviceLogger.Error(err, fmt.Sprintf("Unable to patch cilium egress gateway policy %s", egressPolicy.Name))
 				return ctrl.Result{}, err
 			}
+			r.Recorder.Event(&egressPolicy, "Normal", kubevipciliumwatcher.EventEgressUpdateReason, fmt.Sprintf("Updated with new nodeSelector %s=%s by %s/%s service", kubevipciliumwatcher.EgressVipAnnotation, host, req.Namespace, req.Name))
+			r.Recorder.Event(&service, "Normal", kubevipciliumwatcher.EventServiceUpdateReason, fmt.Sprintf("Updated Cilium egress gateway policy %s with new nodeSelector %s=%s", egressPolicy.Name, kubevipciliumwatcher.EgressVipAnnotation, host))
 		}
 	}
 
