@@ -17,7 +17,7 @@ You can use Helm and the default settings to install the operator:
 
 ```shell
 helm upgrade -i kube-vip-watcher --create-namespace --namespace kube-vip-watcher
-     oci://registry-1.docker.io/angeloxx/kube-vip-cilium-watcher --version 0.0.6 
+     oci://registry-1.docker.io/angeloxx/kube-vip-cilium-watcher --version 0.0.6-helm
 ```
 
 ## Configure
