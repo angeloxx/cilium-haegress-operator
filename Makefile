@@ -278,6 +278,6 @@ build-helm:
 
 .PHONY: build-helm-upload
 build-helm-upload: build-helm
-	helm push helm/charts/kube-vip-cilium-watcher-0.1.0.tgz \
+	helm push helm/charts/kube-vip-cilium-watcher-$(VERSION).tgz \
 		oci://registry-1.docker.io/$(IMAGE_REGISTRY_NAMESPACE)
 
