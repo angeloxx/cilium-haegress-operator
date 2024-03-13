@@ -10,6 +10,12 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
 
+# Can be one of 'debug', 'info', 'error'
+logLevel: "info"
+
+# Valid values are "text" and "json"
+logFormat: "json"
+
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
@@ -25,9 +31,20 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
+rbac:
+    # Specifies whether RBAC resources should be created
+    create: true
+
+autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPU: 80
+    targetMemory: 80
+
 podAnnotations: {}
 #  prometheus.io/scrape: "true"
-#  prometheus.io/port: "{{ .Values.service.port }}"
+#  prometheus.io/port: "8080"
 #  prometheus.io/path: "/metrics"
 podLabels: {}
 

@@ -111,7 +111,7 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	if !foundEgress {
-		r.Recorder.Event(&service, "Warning", kubevipciliumwatcher.EventServiceNotFoundReason, fmt.Sprintf("Unable to find a Cilium Egress Gateway Policy for the service"))
+		r.Recorder.Event(&service, "Warning", kubevipciliumwatcher.EventServiceNotFoundReason, fmt.Sprintf("Unable to find a Cilium Egress Gateway Policy for the service IPs %s", strings.Join(ips[:], ",")))
 	}
 
 	return ctrl.Result{}, nil

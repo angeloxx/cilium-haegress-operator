@@ -11,5 +11,5 @@ spec:
     - name: wget
       image: busybox
       command: ['wget']
-      args: ['{{ include "kube-vip-cilium-watcher.fullname" . }}:{{ .Values.service.port }}']
+      args: ['{{ include "kube-vip-cilium-watcher.fullname" . }}:8081/readyz']
   restartPolicy: Never
