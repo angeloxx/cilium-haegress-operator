@@ -42,7 +42,10 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	ciliumv2.AddToScheme(scheme)
+	err := ciliumv2.AddToScheme(scheme)
+	if err != nil {
+		return
+	}
 
 	//+kubebuilder:scaffold:scheme
 }

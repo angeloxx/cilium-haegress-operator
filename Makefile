@@ -271,13 +271,18 @@ catalog-push: ## Push a catalog image.
 ko:
 	scripts/install-ko.sh
 
+helm:
+	helm plugin install https://github.com/melmorabity/helm-kubeconform --version 0.6.4.1
+
 .PHONY: build-helm
 build-helm:
-	helm package charts/kube-vip-cilium-watcher -d helm/charts
+	helm kubeconform charts/kube-vip-cilium-watcher
+	helm package charts/kube-vip-cilium-watcher -d helm/charts --version $(VERSION)
+
 	helm repo index charts/charts --url https://angeloxx.github.io/kube-vip-cilium-watcher
 
 .PHONY: build-helm-upload
 build-helm-upload: build-helm
-	helm push helm/charts/kube-vip-cilium-watcher-0.1.0.tgz \
+	helm push helm/charts/kube-vip-cilium-watcher-$(VERSION).tgz \
 		oci://registry-1.docker.io/$(IMAGE_REGISTRY_NAMESPACE)
 
