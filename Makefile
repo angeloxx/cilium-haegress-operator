@@ -271,6 +271,10 @@ catalog-push: ## Push a catalog image.
 ko:
 	scripts/install-ko.sh
 
+vulncheck:
+	go install golang.org/x/vuln/cmd/govulncheck@latest
+	govulncheck ./...
+
 helm:
 	helm plugin install https://github.com/melmorabity/helm-kubeconform --version 0.6.4.1
 
