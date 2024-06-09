@@ -23,6 +23,14 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - services
   verbs:
   - get

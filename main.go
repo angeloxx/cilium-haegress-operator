@@ -95,13 +95,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.ServiceReconciler{
+	if err = (&controllers.LeasesController{
 		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("Service"),
+		Log:      ctrl.Log.WithName("controllers").WithName("Leases"),
 		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorderFor("kube-vip-cilium-watcher"),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Unable to create controller Service")
+		setupLog.Error(err, "Unable to create controller Leases")
 		os.Exit(1)
 	}
 	if err = (&controllers.CiliumEgressGatewayPolicyReconciler{

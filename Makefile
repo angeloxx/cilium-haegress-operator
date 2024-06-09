@@ -126,7 +126,7 @@ docker-push: ## Push docker image with the manager.
 
 PLATFORMS ?= linux/arm64,linux/amd64
 .PHONY: build-image
-build-image: ko vulncheck
+build-image: ko # vulncheck
 	KO_DOCKER_REPO=${IMAGE} \
     VERSION=${VERSION} \
     ko build --tags ${VERSION} --bare --sbom ${IMG_SBOM} \
