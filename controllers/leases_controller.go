@@ -32,7 +32,7 @@ type LeasesController struct {
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
 func (r *LeasesController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	var lease v1beta1.Lease
+	var lease v1.Lease
 	var log = r.Log
 
 	if err := r.Get(ctx, req.NamespacedName, &lease); err != nil {

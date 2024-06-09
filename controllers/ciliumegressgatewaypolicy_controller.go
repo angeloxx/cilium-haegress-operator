@@ -22,7 +22,7 @@ import (
 	"github.com/angeloxx/kube-vip-cilium-watcher/pkg"
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	"github.com/go-logr/logr"
-	"k8s.io/api/coordination/v1beta1"
+	v1 "k8s.io/api/coordination/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -83,7 +83,7 @@ func (r *CiliumEgressGatewayPolicyReconciler) Reconcile(ctx context.Context, req
 	leaseFullName := fmt.Sprintf("cilium-l2announce-%s-%s", serviceNamespace, serviceName)
 
 	// Get the lease
-	var lease v1beta1.Lease
+	var lease v1.Lease
 	if err := r.Get(ctx, types.NamespacedName{Name: leaseFullName, Namespace: leaseNamespace}, &lease); err != nil {
 		logger.Info(fmt.Sprintf("Lease %s not yet ready", leaseFullName))
 		return ctrl.Result{}, err
