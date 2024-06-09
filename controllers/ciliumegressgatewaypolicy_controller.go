@@ -89,7 +89,7 @@ func (r *CiliumEgressGatewayPolicyReconciler) Reconcile(ctx context.Context, req
 		return ctrl.Result{}, err
 	}
 
-	host := lease.Spec.HolderIdentity
+	host := *lease.Spec.HolderIdentity
 
 	// Modify egressPolicy nodeSepector to match the service
 	patchData := fmt.Sprintf(`{"spec":{"egressGateway":{"nodeSelector":{"matchLabels":{"%s":"%s"}}}}}`, kubevipciliumwatcher.NodeNameAnnotation, host)

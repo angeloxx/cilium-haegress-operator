@@ -6,6 +6,7 @@ import (
 	kubevipciliumwatcher "github.com/angeloxx/kube-vip-cilium-watcher/pkg"
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	"github.com/go-logr/logr"
+	v1 "k8s.io/api/coordination/v1"
 	"k8s.io/api/coordination/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
