@@ -68,6 +68,11 @@ func (r *LeasesController) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 
 		currentHost := *lease.Spec.HolderIdentity
+		if currentHost == "" {
+			logger.Info("Lease doesn't have a holderIdentity, ignoring")
+			continue
+		}
+
 		policyHost := string(egressPolicy.Spec.EgressGateway.NodeSelector.MatchLabels[kubevipciliumwatcher.NodeNameAnnotation])
 
 		if policyHost == currentHost {
