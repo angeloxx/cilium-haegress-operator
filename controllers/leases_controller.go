@@ -60,7 +60,7 @@ func (r *LeasesController) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	logger.V(0).Info(fmt.Sprintf("Found %d Cilium egress gateway policies to evaluate", len(egressPolicies.Items)))
+	logger.V(0).Info(fmt.Sprintf("Found %d Lease to evaluate", len(egressPolicies.Items)))
 	for _, egressPolicy := range egressPolicies.Items {
 		leaseFullName := fmt.Sprintf("cilium-l2announce-%s-%s", egressPolicy.Annotations[kubevipciliumwatcher.LeaseServiceNamespace], egressPolicy.Annotations[kubevipciliumwatcher.LeaseServiceName])
 		if leaseFullName != lease.Name {
@@ -79,6 +79,8 @@ func (r *LeasesController) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			logger.Info("EgressGatewayPolicy already configured as expected, ignoring.")
 			continue
 		}
+
+		logger.V(0).Info(fmt.Sprintf("EgressGatewayPolicy should be updated from %s to %s."), policyHost, currentHost)
 
 		// Modify egressPolicy nodeSepector to match the service
 		patchData := fmt.Sprintf(`{"spec":{"egressGateway":{"nodeSelector":{"matchLabels":{"%s":"%s"}}}}}`, kubevipciliumwatcher.NodeNameAnnotation, currentHost)

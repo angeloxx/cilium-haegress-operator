@@ -85,7 +85,7 @@ func (r *CiliumEgressGatewayPolicyReconciler) Reconcile(ctx context.Context, req
 	// Get the lease
 	var lease v1.Lease
 	if err := r.Get(ctx, types.NamespacedName{Name: leaseFullName, Namespace: r.CiliumNamespace}, &lease); err != nil {
-		logger.Info(fmt.Sprintf("Lease %s not yet ready", leaseFullName))
+		logger.Info(fmt.Sprintf("Lease %s/%s not yet ready", r.CiliumNamespace, leaseFullName))
 		return ctrl.Result{}, err
 	}
 
@@ -99,7 +99,7 @@ func (r *CiliumEgressGatewayPolicyReconciler) Reconcile(ctx context.Context, req
 		logger.Error(err, fmt.Sprintf("Unable to patch cilium egress gateway policy %s", egressPolicy.Name))
 		return ctrl.Result{}, err
 	}
-	r.Recorder.Event(&egressPolicy, "Normal", kubevipciliumwatcher.EventEgressUpdateReason, fmt.Sprintf("Updated with new nodeSelector %s=%s by %s/%s service", kubevipciliumwatcher.NodeNameAnnotation, host, req.Namespace, req.Name))
+	r.Recorder.Event(&egressPolicy, "Normal", kubevipciliumwatcher.EventEgressUpdateReason, fmt.Sprintf("Updated with new nodeSelector %s=%s by %s/%s service", kubevipciliumwatcher.NodeNameAnnotation, host, serviceNamespace, serviceName))
 
 	return ctrl.Result{}, nil
 }
