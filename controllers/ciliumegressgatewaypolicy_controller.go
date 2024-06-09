@@ -34,9 +34,10 @@ import (
 // CiliumEgressGatewayPolicyReconciler reconciles a CiliumEgressGatewayPolicy object
 type CiliumEgressGatewayPolicyReconciler struct {
 	client.Client
-	Log      logr.Logger
-	Scheme   *runtime.Scheme
-	Recorder record.EventRecorder
+	Log             logr.Logger
+	Scheme          *runtime.Scheme
+	Recorder        record.EventRecorder
+	CiliumNamespace string
 }
 
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;update;patch
@@ -77,14 +78,13 @@ func (r *CiliumEgressGatewayPolicyReconciler) Reconcile(ctx context.Context, req
 		return ctrl.Result{}, nil
 	}
 
-	leaseNamespace := "kube-system"
 	serviceNamespace := egressPolicy.Annotations[kubevipciliumwatcher.LeaseServiceNamespace]
 	serviceName := egressPolicy.Annotations[kubevipciliumwatcher.LeaseServiceName]
 	leaseFullName := fmt.Sprintf("cilium-l2announce-%s-%s", serviceNamespace, serviceName)
 
 	// Get the lease
 	var lease v1.Lease
-	if err := r.Get(ctx, types.NamespacedName{Name: leaseFullName, Namespace: leaseNamespace}, &lease); err != nil {
+	if err := r.Get(ctx, types.NamespacedName{Name: leaseFullName, Namespace: r.CiliumNamespace}, &lease); err != nil {
 		logger.Info(fmt.Sprintf("Lease %s not yet ready", leaseFullName))
 		return ctrl.Result{}, err
 	}

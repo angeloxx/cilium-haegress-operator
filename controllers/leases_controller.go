@@ -7,7 +7,6 @@ import (
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	"github.com/go-logr/logr"
 	v1 "k8s.io/api/coordination/v1"
-	"k8s.io/api/coordination/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -19,9 +18,10 @@ import (
 
 type LeasesController struct {
 	client.Client
-	Log      logr.Logger
-	Scheme   *runtime.Scheme
-	Recorder record.EventRecorder
+	Log             logr.Logger
+	Scheme          *runtime.Scheme
+	Recorder        record.EventRecorder
+	CiliumNamespace string
 }
 
 // Reconcile handles a reconciliation request for a Lease with the
@@ -93,6 +93,6 @@ func (r *LeasesController) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 // SetupWithManager sets up the controller with the Manager.
 func (r *LeasesController) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1beta1.Lease{}).
+		For(&v1.Lease{}).
 		Complete(r)
 }

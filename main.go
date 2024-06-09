@@ -54,8 +54,10 @@ func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
+	var ciliumNamespace string
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	flag.StringVar(&ciliumNamespace, "cilium-namespace", "kube-system", "The namespace where Cilium is installed")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -96,19 +98,21 @@ func main() {
 	}
 
 	if err = (&controllers.LeasesController{
-		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("Leases"),
-		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("kube-vip-cilium-watcher"),
+		Client:          mgr.GetClient(),
+		Log:             ctrl.Log.WithName("controllers").WithName("Leases"),
+		Scheme:          mgr.GetScheme(),
+		Recorder:        mgr.GetEventRecorderFor("kube-vip-cilium-watcher"),
+		CiliumNamespace: ciliumNamespace,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Unable to create controller Leases")
 		os.Exit(1)
 	}
 	if err = (&controllers.CiliumEgressGatewayPolicyReconciler{
-		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("CiliumEgressGatewayPolicy"),
-		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("kube-vip-cilium-watcher"),
+		Client:          mgr.GetClient(),
+		Log:             ctrl.Log.WithName("controllers").WithName("CiliumEgressGatewayPolicy"),
+		Scheme:          mgr.GetScheme(),
+		Recorder:        mgr.GetEventRecorderFor("kube-vip-cilium-watcher"),
+		CiliumNamespace: ciliumNamespace,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller CiliumEgressGatewayPolicy")
 		os.Exit(1)

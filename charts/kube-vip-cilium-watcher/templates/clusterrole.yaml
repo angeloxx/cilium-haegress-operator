@@ -4,8 +4,8 @@ kind: ClusterRole
 metadata:
   name: {{ include "kube-vip-cilium-watcher.fullname" . }}-cr
 rules:
-  - apiGroups: [""]
-    resources: ["services"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
     verbs: ["get", "list", "watch"]
   - apiGroups: [""]
     resources: ["events"]
