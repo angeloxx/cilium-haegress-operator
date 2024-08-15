@@ -20,7 +20,7 @@ jobs:
       - env:
           auth_token: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
-          echo "${auth_token}" | ko login https://docker.io --username ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+          echo "${auth_token}" | ko login https://registry-1.docker.io --username ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
           ko build
 
       - name: Build Image
