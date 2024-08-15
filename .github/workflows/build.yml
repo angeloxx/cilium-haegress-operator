@@ -21,8 +21,6 @@ jobs:
           auth_token: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
           echo "${auth_token}" | ko login registry-1.docker.io --username ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
-          ko build
-
       - name: Build Image
         run: |
           make build-image
