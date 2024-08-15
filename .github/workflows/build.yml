@@ -14,12 +14,13 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
-      - uses: ko-build/setup-ko@v0.6
-      - env:
+      - name: Setup Ko
+        uses: ko-build/setup-ko@v0.6
+
+      - name: Build Image
+        env:
           auth_token: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
-          echo "${auth_token}" | ko login hub.docker.io --username ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
-      - name: Build Image
-        run: |
+          echo "${auth_token}" | ko login hub.docker.io --username angeloxx --password-stdin
           make build-image
 
