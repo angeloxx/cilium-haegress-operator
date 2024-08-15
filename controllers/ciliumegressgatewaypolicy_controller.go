@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	ciliumegressobserver "github.com/angeloxx/cilium-egress-observer/pkg"
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	"github.com/go-logr/logr"
 	v1 "k8s.io/api/coordination/v1"
@@ -72,13 +73,13 @@ func (r *CiliumEgressGatewayPolicyReconciler) Reconcile(ctx context.Context, req
 
 	logger.Info(fmt.Sprintf("EgressGatewayPolicy has IP %s, checking for leases", egressPolicy.Spec.EgressGateway.EgressIP))
 
-	if egressPolicy.Annotations[kubevipciliumwatcher.LeaseServiceNamespace] == "" || egressPolicy.Annotations[kubevipciliumwatcher.LeaseServiceName] == "" {
+	if egressPolicy.Annotations[ciliumegressobserver.LeaseServiceNamespace] == "" || egressPolicy.Annotations[ciliumegressobserver.LeaseServiceName] == "" {
 		logger.Info("EgressGatewayPolicy doesn't have the lease annotation, ignoring")
 		return ctrl.Result{}, nil
 	}
 
-	serviceNamespace := egressPolicy.Annotations[kubevipciliumwatcher.LeaseServiceNamespace]
-	serviceName := egressPolicy.Annotations[kubevipciliumwatcher.LeaseServiceName]
+	serviceNamespace := egressPolicy.Annotations[ciliumegressobserver.LeaseServiceNamespace]
+	serviceName := egressPolicy.Annotations[ciliumegressobserver.LeaseServiceName]
 	leaseFullName := fmt.Sprintf("cilium-l2announce-%s-%s", serviceNamespace, serviceName)
 
 	// Get the lease
@@ -91,14 +92,14 @@ func (r *CiliumEgressGatewayPolicyReconciler) Reconcile(ctx context.Context, req
 	host := *lease.Spec.HolderIdentity
 
 	// Modify egressPolicy nodeSepector to match the service
-	patchData := fmt.Sprintf(`{"spec":{"egressGateway":{"nodeSelector":{"matchLabels":{"%s":"%s"}}}}}`, kubevipciliumwatcher.NodeNameAnnotation, host)
+	patchData := fmt.Sprintf(`{"spec":{"egressGateway":{"nodeSelector":{"matchLabels":{"%s":"%s"}}}}}`, ciliumegressobserver.NodeNameAnnotation, host)
 
 	logger.Info(fmt.Sprintf("Patching cilium egress gateway policy %s with host %s", egressPolicy.Name, host))
 	if err := r.Patch(ctx, &egressPolicy, client.RawPatch(types.MergePatchType, []byte(patchData))); err != nil {
 		logger.Error(err, fmt.Sprintf("Unable to patch cilium egress gateway policy %s", egressPolicy.Name))
 		return ctrl.Result{}, err
 	}
-	r.Recorder.Event(&egressPolicy, "Normal", kubevipciliumwatcher.EventEgressUpdateReason, fmt.Sprintf("Updated with new nodeSelector %s=%s by %s/%s service", kubevipciliumwatcher.NodeNameAnnotation, host, serviceNamespace, serviceName))
+	r.Recorder.Event(&egressPolicy, "Normal", ciliumegressobserver.EventEgressUpdateReason, fmt.Sprintf("Updated with new nodeSelector %s=%s by %s/%s service", ciliumegressobserver.NodeNameAnnotation, host, serviceNamespace, serviceName))
 
 	return ctrl.Result{}, nil
 }

@@ -1,4 +1,4 @@
-package kubevipciliumwatcher
+package ciliumegressobserver
 
 const (
 	LeaseServiceNamespace   = "cilium.angeloxx.ch/service-namespace"
