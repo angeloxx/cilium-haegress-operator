@@ -16,14 +16,13 @@ jobs:
 
       - name: Setup Ko
         uses: ko-build/setup-ko@v0.6
+
+      - name: Build Image
         env:
           auth_token: ${{ secrets.DOCKERHUB_TOKEN }}
           KO_DOCKER_REPO: angeloxx/cilium-egress-observer
           VERSION: latest
         run: |
           echo "${auth_token}" | ko login hub.docker.io --username angeloxx --password-stdin
-
-      - name: Build Image
-        run: |
           make build-image
 
