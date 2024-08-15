@@ -280,10 +280,10 @@ helm:
 
 .PHONY: build-helm
 build-helm:
-	sed -i 's|tag: ".*"|tag: "$(VERSION)"|g' charts/kube-vip-cilium-watcher/values.yaml
-	sed -i 's|--version .*-helm|--version $(VERSION)-helm|g' README.md
+	sed -i -e 's|tag: ".*"|tag: "${VERSION}"|g' charts/kube-vip-cilium-watcher/values.yaml
+	sed -i -e 's|--version .*-helm|--version ${VERSION}-helm|g' README.md
 	helm kubeconform charts/kube-vip-cilium-watcher
-	helm package charts/kube-vip-cilium-watcher -d helm/charts --version $(VERSION)-helm
+	helm package charts/kube-vip-cilium-watcher -d helm/charts --version ${VERSION}-helm
 
 	helm repo index charts/charts --url https://angeloxx.github.io/kube-vip-cilium-watcher
 
