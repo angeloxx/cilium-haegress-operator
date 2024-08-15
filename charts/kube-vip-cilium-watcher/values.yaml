@@ -5,7 +5,7 @@
 replicaCount: 1
 
 image:
-  repository: angeloxx/kube-vip-cilium-watcher
+  repository: angeloxx/cilium-egress-observer
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "0.0.6-next-51228cb-20240609-dirty"

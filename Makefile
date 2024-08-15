@@ -106,7 +106,7 @@ test: manifests generate fmt vet envtest ## Run tests.
 
 .PHONY: build
 build: manifests generate fmt vet ## Build manager binary.
-	go build -o bin/kube-vip-cilium-watcher main.go
+	go build -o bin/cilium-egress-observer main.go
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
@@ -130,7 +130,7 @@ build-image: ko # vulncheck
 	KO_DOCKER_REPO=${IMAGE} \
     VERSION=${VERSION} \
     ko build --tags ${VERSION} --bare --sbom ${IMG_SBOM} \
-      --image-label org.opencontainers.image.source="https://github.com/angeloxx/kube-vip-cilium-watcher" \
+      --image-label org.opencontainers.image.source="https://github.com/angeloxx/cilium-egress-observer" \
       --image-label org.opencontainers.image.revision=$(shell git rev-parse HEAD) \
       --platform=${PLATFORMS}  --push=true .
 
@@ -280,15 +280,15 @@ helm:
 
 .PHONY: build-helm
 build-helm:
-	sed -i -e 's|tag: ".*"|tag: "${VERSION}"|g' charts/kube-vip-cilium-watcher/values.yaml
+	sed -i -e 's|tag: ".*"|tag: "${VERSION}"|g' charts/cilium-egress-observer/values.yaml
 	sed -i -e 's|--version .*-helm|--version ${VERSION}-helm|g' README.md
-	helm kubeconform charts/kube-vip-cilium-watcher
-	helm package charts/kube-vip-cilium-watcher -d helm/charts --version ${VERSION}-helm
+	helm kubeconform charts/cilium-egress-observer
+	helm package charts/cilium-egress-observer -d helm/charts --version ${VERSION}-helm
 
-	helm repo index charts/charts --url https://angeloxx.github.io/kube-vip-cilium-watcher
+	helm repo index charts/charts --url https://angeloxx.github.io/cilium-egress-observer
 
 .PHONY: build-helm-upload
 build-helm-upload: build-helm
-	helm push helm/charts/kube-vip-cilium-watcher-$(VERSION)-helm.tgz \
+	helm push helm/charts/cilium-egress-observer-$(VERSION)-helm.tgz \
 		oci://registry-1.docker.io/$(IMAGE_REGISTRY_NAMESPACE)
 

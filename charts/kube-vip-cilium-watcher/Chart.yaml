@@ -1,6 +1,6 @@
 apiVersion: v2
-name: kube-vip-cilium-watcher
-description: kube-vip-cilium-watcher is an application that synchronizes cilium egress gateway policies with the location of egress IP managed by kube-vip
+name: cilium-egress-observer
+description: cilium-egress-observer is an application that synchronizes cilium egress gateway policies with the location of egress IP managed by Cilium itself
 
 # A chart can be either an 'application' or a 'library' chart.
 #
@@ -24,12 +24,12 @@ version: 0.0.0
 appVersion: "0.0.5"
 
 sources:
-  - https://github.com/angeloxx/kube-vip-cilium-watcher
+  - https://github.com/angeloxx/cilium-egress-observer
 maintainers:
   - name: angeloxx
     email: angeloxx@angeloxx.ch
 
-home: https://github.com/angeloxx/kube-vip-cilium-watcher
+home: https://github.com/angeloxx/cilium-egress-observer
 keywords:
   - kubernetes
   - service
