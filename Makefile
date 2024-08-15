@@ -16,7 +16,7 @@ ifneq ($(shell git status --porcelain),)
 endif
 
 IMAGE_REGISTRY_NAMESPACE ?= angeloxx
-IMAGE_TAG_BASE ?= $(IMAGE_REGISTRY_NAMESPACE)/kube-vip-cilium-watcher
+IMAGE_TAG_BASE ?= $(IMAGE_REGISTRY_NAMESPACE)/cilium-egress-observer
 IMAGE_REGISTRY ?= docker.io
 BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
 BUNDLE_GEN_FLAGS ?= -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
