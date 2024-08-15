@@ -4,9 +4,9 @@ metadata:
   labels:
     app.kubernetes.io/name: service
     app.kubernetes.io/instance: service-sample
-    app.kubernetes.io/part-of: kube-vip-cilium-watcher
+    app.kubernetes.io/part-of: cilium-egress-observer
     app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/created-by: kube-vip-cilium-watcher
+    app.kubernetes.io/created-by: cilium-egress-observer
   name: service-sample
 spec:
   # TODO(user): Add fields here

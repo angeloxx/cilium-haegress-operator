@@ -3,7 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
-	kubevipciliumwatcher "github.com/angeloxx/kube-vip-cilium-watcher/pkg"
+	kubevipciliumwatcher "github.com/angeloxx/cilium-egress-observer/pkg"
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	"github.com/go-logr/logr"
 	v1 "k8s.io/api/coordination/v1"
@@ -25,7 +25,7 @@ type LeasesController struct {
 }
 
 // Reconcile handles a reconciliation request for a Lease with the
-// kube-vip-cilium-watcher annotation.
+// cilium-egress-observer annotation.
 // If the annotation is absent, then Reconcile will ignore the service.
 
 // +kubebuilder:rbac:groups=core,resources=leases,verbs=get;list;watch

@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{ include "kube-vip-cilium-watcher.fullname" . }}-role
+  name: {{ include "cilium-egress-observer.fullname" . }}-role
 rules:
   - apiGroups: [""]
     resources: ["configmaps"]

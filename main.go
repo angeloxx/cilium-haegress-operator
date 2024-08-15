@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	"github.com/angeloxx/kube-vip-cilium-watcher/controllers"
+	"github.com/angeloxx/cilium-egress-observer/controllers"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -101,7 +101,7 @@ func main() {
 		Client:          mgr.GetClient(),
 		Log:             ctrl.Log.WithName("controllers").WithName("Leases"),
 		Scheme:          mgr.GetScheme(),
-		Recorder:        mgr.GetEventRecorderFor("kube-vip-cilium-watcher"),
+		Recorder:        mgr.GetEventRecorderFor("cilium-egress-observer"),
 		CiliumNamespace: ciliumNamespace,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Unable to create controller Leases")
@@ -111,7 +111,7 @@ func main() {
 		Client:          mgr.GetClient(),
 		Log:             ctrl.Log.WithName("controllers").WithName("CiliumEgressGatewayPolicy"),
 		Scheme:          mgr.GetScheme(),
-		Recorder:        mgr.GetEventRecorderFor("kube-vip-cilium-watcher"),
+		Recorder:        mgr.GetEventRecorderFor("cilium-egress-observer"),
 		CiliumNamespace: ciliumNamespace,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller CiliumEgressGatewayPolicy")

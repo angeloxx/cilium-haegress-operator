@@ -1,4 +1,4 @@
-# Default values for kube-vip-cilium-watcher.
+# Default values for cilium-egress-observer.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 

@@ -1,4 +1,4 @@
-module github.com/angeloxx/kube-vip-cilium-watcher
+module github.com/angeloxx/cilium-egress-observer
 
 go 1.21.0
 

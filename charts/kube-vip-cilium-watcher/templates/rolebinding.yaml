@@ -2,13 +2,13 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: {{ include "kube-vip-cilium-watcher.fullname" . }}-rolebinding
+  name: {{ include "cilium-egress-observer.fullname" . }}-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: {{ include "kube-vip-cilium-watcher.fullname" . }}-role
+  name: {{ include "cilium-egress-observer.fullname" . }}-role
 subjects:
   - kind: ServiceAccount
-    name: {{ include "kube-vip-cilium-watcher.serviceAccountName" . }}
+    name: {{ include "cilium-egress-observer.serviceAccountName" . }}
     namespace: {{ .Release.Namespace }}
 {{ end }}
