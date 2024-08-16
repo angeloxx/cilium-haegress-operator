@@ -15,6 +15,11 @@ ifneq ($(shell git status --porcelain),)
 	VERSION := $(VERSION)-dirty
 endif
 
+IMAGE_TAG := ${VERSION}
+ifeq ($(IMAGE_TAG_FORCED),)
+	IMAGE_TAG := ${IMAGE_TAG_FORCED}
+endif
+
 IMAGE_REGISTRY_NAMESPACE ?= angeloxx
 IMAGE_TAG_BASE ?= $(IMAGE_REGISTRY_NAMESPACE)/cilium-egress-observer
 IMAGE_REGISTRY ?= docker.io
@@ -128,8 +133,7 @@ PLATFORMS ?= linux/arm64,linux/amd64
 .PHONY: build-image
 build-image: ko # vulncheck
 	KO_DOCKER_REPO=${IMAGE} \
-    VERSION=${VERSION} \
-    ko build --tags ${VERSION} --bare --sbom ${IMG_SBOM} \
+    ko build --tags ${IMAGE_TAG_FORCED} --bare --sbom ${IMG_SBOM} \
       --image-label org.opencontainers.image.source="https://github.com/angeloxx/cilium-egress-observer" \
       --image-label org.opencontainers.image.revision=$(shell git rev-parse HEAD) \
       --platform=${PLATFORMS}  --push=true .
