@@ -28,7 +28,7 @@ jobs:
           # KO_DOCKER_REPO: angeloxx/cilium-egress-observer
           #VERSION: latest
           IMAGE_REGISTRY_NAMESPACE: angeloxx
-          IMAGE_REGISTRY: hub.docker.io
+          IMAGE_REGISTRY: docker.io
           IMAGE_TAG_FORCED: latest
         run: |
           # echo "${AUTH_TOKEN}" | ko login hub.docker.io --username angeloxx --password-stdin
