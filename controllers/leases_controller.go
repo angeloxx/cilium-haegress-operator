@@ -83,7 +83,7 @@ func (r *LeasesController) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 		logger.V(1).Info(fmt.Sprintf("Found %d haegressgatewaypolicies to evaluate", len(egressHAIPs.Items)))
 		for _, egressHAIP := range egressHAIPs.Items {
-			if fmt.Sprintf("cilium-l2announce-%s-%s-%s", egressHAIP.Namespace, haegressip.ServiceNamePrefix, egressHAIP.Name) == lease.Name {
+			if fmt.Sprintf("cilium-l2announce-%s-%s", egressHAIP.Namespace, egressHAIP.Name) == lease.Name {
 				logger.Info(fmt.Sprintf("Updating lease %s with reference to parent HAEgressGatewayPolicy", lease.Name))
 				patchData := fmt.Sprintf(`{"metadata":{"labels":{"%s":"%s","%s":"%s"}}}`,
 					haegressip.HAEgressGatewayPolicyName, egressHAIP.Name,
@@ -139,7 +139,7 @@ func (r *LeasesController) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			logger.V(0).Info("unable to patch cilium egress gateway policy %s", egressPolicy.Name)
 			return ctrl.Result{}, err
 		}
-		r.Recorder.Event(&egressPolicy, "Normal", haegressip.EventEgressUpdateReason, fmt.Sprintf("Updated with new nodeSelector %s=%s by %s/%s-%s service", haegressip.NodeNameAnnotation, currentHost, req.Namespace, haegressip.ServiceNamePrefix, req.Name))
+		r.Recorder.Event(&egressPolicy, "Normal", haegressip.EventEgressUpdateReason, fmt.Sprintf("Updated with new nodeSelector %s=%s by %s/%s service", haegressip.NodeNameAnnotation, currentHost, req.Namespace, req.Name))
 
 	}
 

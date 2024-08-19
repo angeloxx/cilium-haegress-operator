@@ -73,8 +73,8 @@ func (r *HAEgressGatewayPolicyReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, err
 	}
 
-	leassExpectedName := fmt.Sprintf("cilium-l2announce-%s-%s-%s",
-		r.EgressNamespace, haegressip.ServiceNamePrefix, haEgressGatewayPolicy.Name)
+	leassExpectedName := fmt.Sprintf("cilium-l2announce-%s-%s",
+		r.EgressNamespace, haEgressGatewayPolicy.Name)
 
 	if haEgressGatewayPolicy.Labels[haegressip.HAEgressGatewayPolicyExpectedLeaseName] != leassExpectedName {
 		haEgressGatewayPolicy.Labels[haegressip.HAEgressGatewayPolicyExpectedLeaseName] = leassExpectedName
@@ -104,8 +104,7 @@ func (r *HAEgressGatewayPolicyReconciler) UpdateOrCreateCiliumEgressGatewayPolic
 
 	ciliumEgressGatewayPolicyNew := &ciliumv2.CiliumEgressGatewayPolicy{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("%s-%s-%s",
-				haegressip.CiliumEgressGatewayPolicyNamePrefix,
+			Name: fmt.Sprintf("%s-%s",
 				r.EgressNamespace,
 				haEgressGatewayPolicy.Name),
 			Labels:      haEgressGatewayPolicy.Labels,
@@ -175,7 +174,7 @@ func (r *HAEgressGatewayPolicyReconciler) UpdateOrCreateService(ctx context.Cont
 	// Define the service and copy all annotations from the HAEgressGatewayPolicy instance
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        fmt.Sprintf("%s-%s", haegressip.ServiceNamePrefix, haEgressGatewayPolicy.Name),
+			Name:        haEgressGatewayPolicy.Name,
 			Namespace:   r.EgressNamespace,
 			Labels:      haEgressGatewayPolicy.Labels,
 			Annotations: haEgressGatewayPolicy.Annotations,

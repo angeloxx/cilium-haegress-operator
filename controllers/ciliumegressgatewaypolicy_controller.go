@@ -78,31 +78,14 @@ func (r *CiliumEgressGatewayPolicyReconciler) Reconcile(ctx context.Context, req
 	haegressgatewaypolicyNamespace := egressPolicy.Labels[haegressip.HAEgressGatewayPolicyNamespace]
 	haegressgatewaypolicyName := egressPolicy.Labels[haegressip.HAEgressGatewayPolicyName]
 
-	// If HAEgressGatewayPolicy resource is gone, we can remove this resource (because we can't link it to a namespaced object)
-	/*
-		haEgressGatewayPolicy := haegressip.HAEgressGatewayPolicy{}
-		if err := r.Get(ctx, types.NamespacedName{Name: haegressgatewaypolicyName, Namespace: haegressgatewaypolicyNamespace}, &haEgressGatewayPolicy); err != nil {
-			if apierrors.IsNotFound(err) {
-				logger.Info("HAEgressGatewayPolicy resource not found, removing egress gateway policy")
-				if err := r.Delete(ctx, &egressPolicy); err != nil {
-					logger.Error(err, "Unable to delete egress gateway policy")
-					return ctrl.Result{}, err
-				}
-				return ctrl.Result{}, nil
-			}
-			logger.Error(err, "Unable to get HAEgressGatewayPolicy resource")
-			return ctrl.Result{}, err
-		}
-	*/
-
-	leaseFullName := fmt.Sprintf("cilium-l2announce-%s-%s-%s", haegressgatewaypolicyNamespace, haegressip.ServiceNamePrefix, haegressgatewaypolicyName)
+	leaseFullName := fmt.Sprintf("cilium-l2announce-%s-%s", r.EgressNamespace, haegressgatewaypolicyName)
 
 	// Get the lease
 	var lease v1.Lease
 	if err := r.Get(ctx, types.NamespacedName{Name: leaseFullName, Namespace: r.CiliumNamespace}, &lease); err != nil {
 		// Debug log
 		logger.Info(fmt.Sprintf("Lease %s/%s not found, retry later in %s", r.CiliumNamespace, leaseFullName, defaults.HealthCheckInterval))
-		return ctrl.Result{RequeueAfter: defaults.HealthCheckInterval}, nil
+		return ctrl.Result{RequeueAfter: haegressip.LeaseCheckRequeueAfter}, nil
 	}
 
 	host := *lease.Spec.HolderIdentity
