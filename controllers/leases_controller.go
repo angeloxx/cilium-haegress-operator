@@ -3,7 +3,8 @@ package controllers
 import (
 	"context"
 	"fmt"
-	ciliumegressobserver "github.com/angeloxx/cilium-egress-observer/pkg"
+	haegressip "github.com/angeloxx/cilium-ha-egress/api/v1alpha1"
+	ciliumhaegress "github.com/angeloxx/cilium-ha-egress/pkg"
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	"github.com/go-logr/logr"
 	v1 "k8s.io/api/coordination/v1"
@@ -25,7 +26,7 @@ type LeasesController struct {
 }
 
 // Reconcile handles a reconciliation request for a Lease with the
-// cilium-egress-observer annotation.
+// cilium-ha-egress annotation.
 // If the annotation is absent, then Reconcile will ignore the service.
 
 // +kubebuilder:rbac:groups=core,resources=leases,verbs=get;list;watch
@@ -53,44 +54,91 @@ func (r *LeasesController) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	logger := log.WithValues("namespace", req.Namespace, "lease", req.Name)
-	// get all cilium egress gateway policies from api server
+
+	currentHost := *lease.Spec.HolderIdentity
+	if currentHost == "" {
+		logger.Info("Lease doesn't have a holderIdentity, ignoring and reconcile on update")
+		return ctrl.Result{}, nil
+	}
+
+	// check the lease was already annotated with the service name generated the lease
+	isLeaseAnnotated := lease.Labels[ciliumhaegress.HAEgressIPName] != "" && lease.Labels[ciliumhaegress.HAEgressIPNamespace] != ""
+	if !isLeaseAnnotated {
+		logger.V(1).Info("lease doesn't have cilium-ha-egress annotations, we'll be updated in this reconcile if found")
+
+		// Get the HAEgressIP that matches this lease
+		var egressHAIPs haegressip.HAEgressIPList
+		if err := r.List(ctx, &egressHAIPs); err != nil {
+			logger.Error(err, "unable to list HA Cilium Egress IPs, check RBAC permissions")
+			return ctrl.Result{}, err
+		}
+		// Search for the HAEgressIP that matches the lease
+		lookupMatchingEgressHAIPs := r.List(ctx, &egressHAIPs, client.MatchingLabels{
+			ciliumhaegress.HAEgressIPExpectedLeaseName: lease.Name})
+		if lookupMatchingEgressHAIPs != nil {
+			logger.Error(lookupMatchingEgressHAIPs, "unable to list HA Cilium Egress IPs, check RBAC permissions")
+			return ctrl.Result{}, lookupMatchingEgressHAIPs
+		}
+
+		logger.V(1).Info(fmt.Sprintf("Found %d HAEgressIPs to evaluate", len(egressHAIPs.Items)))
+		for _, egressHAIP := range egressHAIPs.Items {
+			if fmt.Sprintf("cilium-l2announce-%s-%s-%s", egressHAIP.Namespace, ciliumhaegress.ServiceNamePrefix, egressHAIP.Name) == lease.Name {
+				logger.Info(fmt.Sprintf("Updating lease %s with reference to parent HAEgressIP", lease.Name))
+				patchData := fmt.Sprintf(`{"metadata":{"labels":{"%s":"%s","%s":"%s"}}}`,
+					ciliumhaegress.HAEgressIPName, egressHAIP.Name,
+					ciliumhaegress.HAEgressIPNamespace, egressHAIP.Namespace)
+				if err := r.Patch(ctx, &lease, client.RawPatch(types.MergePatchType, []byte(patchData))); err != nil {
+					logger.Error(err, "unable to update lease with cilium-ha-egress annotations")
+					return ctrl.Result{}, err
+				}
+				logger.V(0).Info(fmt.Sprintf("Lease %s updated with cilium-ha-egress annotations", lease.Name))
+				isLeaseAnnotated = true
+				break
+			}
+		}
+	}
+
+	if !isLeaseAnnotated {
+		logger.V(1).Info("lease doesn't have cilium-ha-egress annotations, ignoring")
+		return ctrl.Result{}, nil
+
+	}
+
 	var egressPolicies ciliumv2.CiliumEgressGatewayPolicyList
-	if err := r.List(ctx, &egressPolicies); err != nil {
+	if err := r.List(ctx, &egressPolicies, client.MatchingLabels{
+		ciliumhaegress.HAEgressIPNamespace: lease.Labels[ciliumhaegress.HAEgressIPNamespace],
+		ciliumhaegress.HAEgressIPName:      lease.Labels[ciliumhaegress.HAEgressIPName],
+	}); err != nil {
 		logger.Error(err, "unable to list cilium egress gateway policies, check RBAC permissions")
 		return ctrl.Result{}, err
 	}
 
-	logger.V(0).Info(fmt.Sprintf("Found %d Lease to evaluate", len(egressPolicies.Items)))
+	if len(egressPolicies.Items) == 0 {
+		logger.V(1).Info(fmt.Sprintf("No CiliumEgressGatewayPolicy found for the lease, ignoring"))
+		return ctrl.Result{}, nil
+	}
+	logger.V(1).Info(fmt.Sprintf("Found %d policies to evaluate (filtered)", len(egressPolicies.Items)))
+
 	for _, egressPolicy := range egressPolicies.Items {
-		leaseFullName := fmt.Sprintf("cilium-l2announce-%s-%s", egressPolicy.Annotations[ciliumegressobserver.LeaseServiceNamespace], egressPolicy.Annotations[ciliumegressobserver.LeaseServiceName])
-		if leaseFullName != lease.Name {
-			continue
-		}
 
-		currentHost := *lease.Spec.HolderIdentity
-		if currentHost == "" {
-			logger.Info("Lease doesn't have a holderIdentity, ignoring")
-			continue
-		}
-
-		policyHost := string(egressPolicy.Spec.EgressGateway.NodeSelector.MatchLabels[ciliumegressobserver.NodeNameAnnotation])
+		policyHost := string(egressPolicy.Spec.EgressGateway.NodeSelector.MatchLabels[ciliumhaegress.NodeNameAnnotation])
 
 		if policyHost == currentHost {
-			logger.Info("EgressGatewayPolicy already configured as expected, ignoring.")
+			logger.V(1).Info("EgressGatewayPolicy already configured as expected, ignoring.")
 			continue
 		}
 
 		logger.V(0).Info(fmt.Sprintf("EgressGatewayPolicy should be updated from %s to %s.", policyHost, currentHost))
 
-		// Modify egressPolicy nodeSepector to match the service
-		patchData := fmt.Sprintf(`{"spec":{"egressGateway":{"nodeSelector":{"matchLabels":{"%s":"%s"}}}}}`, ciliumegressobserver.NodeNameAnnotation, currentHost)
+		// Modify egressPolicy nodeSelector to match the service
+		patchData := fmt.Sprintf(`{"spec":{"egressGateway":{"nodeSelector":{"matchLabels":{"%s":"%s"}}}}}`, ciliumhaegress.NodeNameAnnotation, currentHost)
 
 		logger.V(0).Info(fmt.Sprintf("Patching cilium egress gateway policy %s with host %s", egressPolicy.Name, currentHost))
 		if err := r.Patch(ctx, &egressPolicy, client.RawPatch(types.MergePatchType, []byte(patchData))); err != nil {
 			logger.V(0).Info("unable to patch cilium egress gateway policy %s", egressPolicy.Name)
 			return ctrl.Result{}, err
 		}
-		r.Recorder.Event(&egressPolicy, "Normal", ciliumegressobserver.EventEgressUpdateReason, fmt.Sprintf("Updated with new nodeSelector %s=%s by %s/%s service", ciliumegressobserver.NodeNameAnnotation, currentHost, req.Namespace, req.Name))
+		r.Recorder.Event(&egressPolicy, "Normal", ciliumhaegress.EventEgressUpdateReason, fmt.Sprintf("Updated with new nodeSelector %s=%s by %s/%s service", ciliumhaegress.NodeNameAnnotation, currentHost, req.Namespace, req.Name))
 
 	}
 

@@ -1,6 +1,6 @@
 apiVersion: v2
-name: cilium-egress-observer
-description: cilium-egress-observer is an application that synchronizes cilium egress gateway policies with the location of egress IP managed by Cilium itself
+name: cilium-ha-egress
+description: cilium-ha-egress is an application that synchronizes cilium egress gateway policies with the location of egress IP managed by Cilium itself
 
 # A chart can be either an 'application' or a 'library' chart.
 #
@@ -24,12 +24,12 @@ version: 0.0.0
 appVersion: "0.0.5"
 
 sources:
-  - https://github.com/angeloxx/cilium-egress-observer
+  - https://github.com/angeloxx/cilium-ha-egress
 maintainers:
   - name: angeloxx
     email: angeloxx@angeloxx.ch
 
-home: https://github.com/angeloxx/cilium-egress-observer
+home: https://github.com/angeloxx/cilium-ha-egress
 keywords:
   - kubernetes
   - service

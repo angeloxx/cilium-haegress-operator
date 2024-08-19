@@ -5,8 +5,8 @@ metadata:
     app.kubernetes.io/name: clusterrolebinding
     app.kubernetes.io/instance: proxy-rolebinding
     app.kubernetes.io/component: kube-rbac-proxy
-    app.kubernetes.io/created-by: cilium-egress-observer
-    app.kubernetes.io/part-of: cilium-egress-observer
+    app.kubernetes.io/created-by: cilium-ha-egress
+    app.kubernetes.io/part-of: cilium-ha-egress
     app.kubernetes.io/managed-by: kustomize
   name: proxy-rolebinding
 roleRef:

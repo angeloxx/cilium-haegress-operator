@@ -1,11 +1,11 @@
-# Default values for cilium-egress-observer.
+# Default values for cilium-ha-egress.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
 replicaCount: 1
 
 image:
-  repository: angeloxx/cilium-egress-observer
+  repository: angeloxx/cilium-ha-egress
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "0.0.6-next-51228cb-20240609-dirty"

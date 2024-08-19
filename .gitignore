@@ -29,3 +29,5 @@ Dockerfile.cross
 output-dir/
 
 helm/charts/*.tgz
+
+cmd/main.go

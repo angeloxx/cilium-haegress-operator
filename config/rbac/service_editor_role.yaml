@@ -6,8 +6,8 @@ metadata:
     app.kubernetes.io/name: clusterrole
     app.kubernetes.io/instance: service-editor-role
     app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: cilium-egress-observer
-    app.kubernetes.io/part-of: cilium-egress-observer
+    app.kubernetes.io/created-by: cilium-ha-egress
+    app.kubernetes.io/part-of: cilium-ha-egress
     app.kubernetes.io/managed-by: kustomize
   name: service-editor-role
 rules:

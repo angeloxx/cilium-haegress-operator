@@ -31,7 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	"github.com/angeloxx/cilium-egress-observer/controllers"
+	ciliumangeloxxchv1alpha1 "github.com/angeloxx/cilium-ha-egress/api/v1alpha1"
+	"github.com/angeloxx/cilium-ha-egress/controllers"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -47,6 +48,7 @@ func init() {
 		return
 	}
 
+	utilruntime.Must(ciliumangeloxxchv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -87,7 +89,7 @@ func main() {
 		},
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "cilium-egress-observer.angeloxx.ch",
+		LeaderElectionID:       "cilium-ha-egress.angeloxx.ch",
 
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
@@ -106,26 +108,45 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.LeasesController{
-		Client:          mgr.GetClient(),
-		Log:             ctrl.Log.WithName("controllers").WithName("Leases"),
-		Scheme:          mgr.GetScheme(),
-		Recorder:        mgr.GetEventRecorderFor("cilium-egress-observer"),
-		CiliumNamespace: ciliumNamespace,
+	if err = (&controllers.HAEgressIPReconciler{
+		Client:   mgr.GetClient(),
+		Log:      ctrl.Log.WithName("controllers").WithName("HAEgressIP"),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("cilium-ha-egress"),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Unable to create controller Leases")
+		setupLog.Error(err, "unable to create controller", "controller", "HAEgressIP")
+		os.Exit(1)
+	}
+	if err = (&controllers.ServicesController{
+		Client:   mgr.GetClient(),
+		Log:      ctrl.Log.WithName("controllers").WithName("Services"),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("cilium-ha-egress"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Services")
 		os.Exit(1)
 	}
 	if err = (&controllers.CiliumEgressGatewayPolicyReconciler{
 		Client:          mgr.GetClient(),
 		Log:             ctrl.Log.WithName("controllers").WithName("CiliumEgressGatewayPolicy"),
 		Scheme:          mgr.GetScheme(),
-		Recorder:        mgr.GetEventRecorderFor("cilium-egress-observer"),
+		Recorder:        mgr.GetEventRecorderFor("cilium-ha-egress"),
 		CiliumNamespace: ciliumNamespace,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller CiliumEgressGatewayPolicy")
 		os.Exit(1)
 	}
+	if err = (&controllers.LeasesController{
+		Client:          mgr.GetClient(),
+		Log:             ctrl.Log.WithName("controllers").WithName("Leases"),
+		Scheme:          mgr.GetScheme(),
+		Recorder:        mgr.GetEventRecorderFor("cilium-ha-egress"),
+		CiliumNamespace: ciliumNamespace,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "Unable to create controller Leases")
+		os.Exit(1)
+	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

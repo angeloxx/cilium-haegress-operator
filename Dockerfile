@@ -32,7 +32,7 @@ WORKDIR /
 COPY --from=builder /workspace/manager .
 USER 65532:65532
 
-ENTRYPOINT ["/cilium-egress-observer"]
+ENTRYPOINT ["/cilium-ha-egress"]
 # Build the manager binary
 FROM golang:1.20 as builder
 ARG TARGETOS
@@ -67,7 +67,7 @@ WORKDIR /
 COPY --from=builder /workspace/manager .
 USER 65532:65532
 
-ENTRYPOINT ["/cilium-egress-observer"]
+ENTRYPOINT ["/cilium-ha-egress"]
 # Build the manager binary
 FROM golang:1.20 as builder
 ARG TARGETOS
@@ -102,7 +102,7 @@ WORKDIR /
 COPY --from=builder /workspace/manager .
 USER 65532:65532
 
-ENTRYPOINT ["/cilium-egress-observer"]
+ENTRYPOINT ["/cilium-ha-egress"]
 # Build the manager binary
 FROM golang:1.20 as builder
 ARG TARGETOS
@@ -135,4 +135,4 @@ WORKDIR /
 COPY --from=builder /workspace/manager .
 USER 65532:65532
 
-ENTRYPOINT ["/cilium-egress-observer"]
+ENTRYPOINT ["/cilium-ha-egress"]

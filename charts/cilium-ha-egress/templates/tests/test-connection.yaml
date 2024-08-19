@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "cilium-ha-egress.fullname" . }}-test-connection"
+  labels:
+    {{- include "cilium-ha-egress.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args: ['{{ include "cilium-ha-egress.fullname" . }}:8081/readyz']
+  restartPolicy: Never

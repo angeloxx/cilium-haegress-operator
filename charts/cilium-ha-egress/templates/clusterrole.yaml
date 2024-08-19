@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "cilium-egress-observer.fullname" . }}-cr
+  name: {{ include "cilium-ha-egress.fullname" . }}-cr
 rules:
   - apiGroups: ["coordination.k8s.io"]
     resources: ["leases"]

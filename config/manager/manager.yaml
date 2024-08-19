@@ -6,8 +6,8 @@ metadata:
     app.kubernetes.io/name: namespace
     app.kubernetes.io/instance: system
     app.kubernetes.io/component: manager
-    app.kubernetes.io/created-by: cilium-egress-observer
-    app.kubernetes.io/part-of: cilium-egress-observer
+    app.kubernetes.io/created-by: cilium-ha-egress
+    app.kubernetes.io/part-of: cilium-ha-egress
     app.kubernetes.io/managed-by: kustomize
   name: system
 ---
@@ -21,8 +21,8 @@ metadata:
     app.kubernetes.io/name: deployment
     app.kubernetes.io/instance: controller-manager
     app.kubernetes.io/component: manager
-    app.kubernetes.io/created-by: cilium-egress-observer
-    app.kubernetes.io/part-of: cilium-egress-observer
+    app.kubernetes.io/created-by: cilium-ha-egress
+    app.kubernetes.io/part-of: cilium-ha-egress
     app.kubernetes.io/managed-by: kustomize
 spec:
   selector:
