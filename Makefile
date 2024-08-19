@@ -21,7 +21,7 @@ ifeq ($(IMAGE_TAG_FORCED),)
 endif
 
 IMAGE_REGISTRY_NAMESPACE ?= angeloxx
-IMAGE_TAG_BASE ?= $(IMAGE_REGISTRY_NAMESPACE)/cilium-ha-egress
+IMAGE_TAG_BASE ?= $(IMAGE_REGISTRY_NAMESPACE)/cilium-haegress-operator
 IMAGE_REGISTRY ?= docker.io
 BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
 BUNDLE_GEN_FLAGS ?= -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
@@ -111,7 +111,7 @@ test: manifests generate fmt vet envtest ## Run tests.
 
 .PHONY: build
 build: manifests generate fmt vet ## Build manager binary.
-	go build -o bin/cilium-ha-egress main.go
+	go build -o bin/cilium-haegress-operator main.go
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
@@ -134,7 +134,7 @@ PLATFORMS ?= linux/arm64,linux/amd64
 build-image: ko # vulncheck
 	KO_DOCKER_REPO=${IMAGE} \
     ko build --tags ${IMAGE_TAG_FORCED} --bare --sbom ${IMG_SBOM} \
-      --image-label org.opencontainers.image.source="https://github.com/angeloxx/cilium-ha-egress" \
+      --image-label org.opencontainers.image.source="https://github.com/angeloxx/cilium-haegress-operator" \
       --image-label org.opencontainers.image.revision=$(shell git rev-parse HEAD) \
       --platform=${PLATFORMS}  --push=true .
 
@@ -284,15 +284,15 @@ helm:
 
 .PHONY: build-helm
 build-helm:
-	sed -i -e 's|tag: ".*"|tag: "${VERSION}"|g' charts/cilium-ha-egress/values.yaml
+	sed -i -e 's|tag: ".*"|tag: "${VERSION}"|g' charts/cilium-haegress-operator/values.yaml
 	sed -i -e 's|--version .*-helm|--version ${VERSION}-helm|g' README.md
-	helm kubeconform charts/cilium-ha-egress
-	helm package charts/cilium-ha-egress -d helm/charts --version ${VERSION}-helm
+	helm kubeconform charts/cilium-haegress-operator
+	helm package charts/cilium-haegress-operator -d helm/charts --version ${VERSION}-helm
 
-	helm repo index charts/charts --url https://angeloxx.github.io/cilium-ha-egress
+	helm repo index charts/charts --url https://angeloxx.github.io/cilium-haegress-operator
 
 .PHONY: build-helm-upload
 build-helm-upload: build-helm
-	helm push helm/charts/cilium-ha-egress-$(VERSION)-helm.tgz \
+	helm push helm/charts/cilium-haegress-operator-$(VERSION)-helm.tgz \
 		oci://registry-1.docker.io/$(IMAGE_REGISTRY_NAMESPACE)
 

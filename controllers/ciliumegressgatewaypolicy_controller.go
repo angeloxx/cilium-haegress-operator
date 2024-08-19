@@ -19,7 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
-	haegressip "github.com/angeloxx/cilium-ha-egress/pkg"
+	haegressip "github.com/angeloxx/cilium-haegress-operator/pkg"
 	"github.com/cilium/cilium/pkg/hubble/relay/defaults"
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	"github.com/go-logr/logr"

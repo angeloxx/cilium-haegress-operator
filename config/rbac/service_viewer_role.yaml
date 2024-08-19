@@ -6,8 +6,8 @@ metadata:
     app.kubernetes.io/name: clusterrole
     app.kubernetes.io/instance: service-viewer-role
     app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: cilium-ha-egress
-    app.kubernetes.io/part-of: cilium-ha-egress
+    app.kubernetes.io/created-by: cilium-haegress-operator
+    app.kubernetes.io/part-of: cilium-haegress-operator
     app.kubernetes.io/managed-by: kustomize
   name: service-viewer-role
 rules:

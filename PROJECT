@@ -8,8 +8,8 @@ layout:
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
-projectName: cilium-ha-egress
-repo: github.com/angeloxx/cilium-ha-egress
+projectName: cilium-haegress-operator
+repo: github.com/angeloxx/cilium-haegress-operator
 resources:
 - api:
     crdVersion: v1
@@ -17,7 +17,7 @@ resources:
   controller: true
   domain: angeloxx.ch
   kind: Service
-  path: github.com/angeloxx/cilium-ha-egress/api/v1
+  path: github.com/angeloxx/cilium-haegress-operator/api/v1
   version: v1
 - controller: true
   domain: angeloxx.ch
@@ -31,6 +31,6 @@ resources:
   domain: angeloxx.ch
   group: cilium.angeloxx.ch
   kind: haEgressGatewayPolicy
-  path: github.com/angeloxx/cilium-ha-egress/api/v1alpha1
+  path: github.com/angeloxx/cilium-haegress-operator/api/v1alpha1
   version: v1alpha1
 version: "3"

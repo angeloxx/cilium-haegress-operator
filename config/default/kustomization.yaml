@@ -1,12 +1,12 @@
 # Adds namespace to all resources.
-namespace: cilium-ha-egress-system
+namespace: cilium-haegress-operator-system
 
 # Value of this field is prepended to the
 # names of all resources, e.g. a deployment named
 # "wordpress" becomes "alices-wordpress".
 # Note that it should also match with the prefix (text before '-') of the namespace
 # field above.
-namePrefix: cilium-ha-egress-
+namePrefix: cilium-haegress-operator-
 
 # Labels to add to all resources and selectors.
 #labels:

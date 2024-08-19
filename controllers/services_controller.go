@@ -3,7 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
-	haegressip "github.com/angeloxx/cilium-ha-egress/pkg"
+	haegressip "github.com/angeloxx/cilium-haegress-operator/pkg"
 	"github.com/cilium/cilium/pkg/hubble/relay/defaults"
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	"github.com/go-logr/logr"
@@ -26,7 +26,7 @@ type ServicesController struct {
 }
 
 // Reconcile handles a reconciliation request for a Lease with the
-// cilium-ha-egress annotation.
+// cilium-haegress-operator annotation.
 // If the annotation is absent, then Reconcile will ignore the service.
 
 // +kubebuilder:rbac:groups=core,resources=leases,verbs=get;list;watch

@@ -8,8 +8,8 @@ metadata:
     app.kubernetes.io/name: servicemonitor
     app.kubernetes.io/instance: controller-manager-metrics-monitor
     app.kubernetes.io/component: metrics
-    app.kubernetes.io/created-by: cilium-ha-egress
-    app.kubernetes.io/part-of: cilium-ha-egress
+    app.kubernetes.io/created-by: cilium-haegress-operator
+    app.kubernetes.io/part-of: cilium-haegress-operator
     app.kubernetes.io/managed-by: kustomize
   name: controller-manager-metrics-monitor
   namespace: system

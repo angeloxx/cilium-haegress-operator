@@ -31,8 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	ciliumv1alpha1 "github.com/angeloxx/cilium-ha-egress/api/v1alpha1"
-	"github.com/angeloxx/cilium-ha-egress/controllers"
+	ciliumv1alpha1 "github.com/angeloxx/cilium-haegress-operator/api/v1alpha1"
+	"github.com/angeloxx/cilium-haegress-operator/controllers"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -91,7 +91,7 @@ func main() {
 		},
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "cilium-ha-egress.angeloxx.ch",
+		LeaderElectionID:       "cilium-haegress-operator.angeloxx.ch",
 
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
@@ -114,7 +114,7 @@ func main() {
 		Client:          mgr.GetClient(),
 		Log:             ctrl.Log.WithName("controllers").WithName("HAEgressGatewayPolicy"),
 		Scheme:          mgr.GetScheme(),
-		Recorder:        mgr.GetEventRecorderFor("cilium-ha-egress"),
+		Recorder:        mgr.GetEventRecorderFor("cilium-haegress-operator"),
 		EgressNamespace: haegressNamespace,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "HAEgressGatewayPolicy")
@@ -124,7 +124,7 @@ func main() {
 		Client:          mgr.GetClient(),
 		Log:             ctrl.Log.WithName("controllers").WithName("Services"),
 		Scheme:          mgr.GetScheme(),
-		Recorder:        mgr.GetEventRecorderFor("cilium-ha-egress"),
+		Recorder:        mgr.GetEventRecorderFor("cilium-haegress-operator"),
 		EgressNamespace: haegressNamespace,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Services")
@@ -134,7 +134,7 @@ func main() {
 		Client:          mgr.GetClient(),
 		Log:             ctrl.Log.WithName("controllers").WithName("CiliumEgressGatewayPolicy"),
 		Scheme:          mgr.GetScheme(),
-		Recorder:        mgr.GetEventRecorderFor("cilium-ha-egress"),
+		Recorder:        mgr.GetEventRecorderFor("cilium-haegress-operator"),
 		CiliumNamespace: ciliumNamespace,
 		EgressNamespace: haegressNamespace,
 	}).SetupWithManager(mgr); err != nil {
@@ -145,7 +145,7 @@ func main() {
 		Client:          mgr.GetClient(),
 		Log:             ctrl.Log.WithName("controllers").WithName("Leases"),
 		Scheme:          mgr.GetScheme(),
-		Recorder:        mgr.GetEventRecorderFor("cilium-ha-egress"),
+		Recorder:        mgr.GetEventRecorderFor("cilium-haegress-operator"),
 		CiliumNamespace: ciliumNamespace,
 		EgressNamespace: haegressNamespace,
 	}).SetupWithManager(mgr); err != nil {

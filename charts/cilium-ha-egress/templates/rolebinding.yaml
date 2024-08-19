@@ -2,13 +2,13 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: {{ include "cilium-ha-egress.fullname" . }}-rolebinding
+  name: {{ include "cilium-haegress-operator.fullname" . }}-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: {{ include "cilium-ha-egress.fullname" . }}-role
+  name: {{ include "cilium-haegress-operator.fullname" . }}-role
 subjects:
   - kind: ServiceAccount
-    name: {{ include "cilium-ha-egress.serviceAccountName" . }}
+    name: {{ include "cilium-haegress-operator.serviceAccountName" . }}
     namespace: {{ .Release.Namespace }}
 {{ end }}

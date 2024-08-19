@@ -1,4 +1,4 @@
-module github.com/angeloxx/cilium-ha-egress
+module github.com/angeloxx/cilium-haegress-operator
 
 go 1.21.0
 

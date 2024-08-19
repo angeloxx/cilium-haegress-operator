@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{ include "cilium-ha-egress.fullname" . }}-role
+  name: {{ include "cilium-haegress-operator.fullname" . }}-role
 rules:
   - apiGroups: [""]
     resources: ["configmaps"]

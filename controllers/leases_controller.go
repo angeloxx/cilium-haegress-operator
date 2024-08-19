@@ -3,8 +3,8 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"github.com/angeloxx/cilium-ha-egress/api/v1alpha1"
-	haegressip "github.com/angeloxx/cilium-ha-egress/pkg"
+	"github.com/angeloxx/cilium-haegress-operator/api/v1alpha1"
+	haegressip "github.com/angeloxx/cilium-haegress-operator/pkg"
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	"github.com/go-logr/logr"
 	v1 "k8s.io/api/coordination/v1"
@@ -27,7 +27,7 @@ type LeasesController struct {
 }
 
 // Reconcile handles a reconciliation request for a Lease with the
-// cilium-ha-egress annotation.
+// cilium-haegress-operator annotation.
 // If the annotation is absent, then Reconcile will ignore the service.
 
 // +kubebuilder:rbac:groups=core,resources=leases,verbs=get;list;watch
@@ -48,59 +48,51 @@ func (r *LeasesController) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		log.Error(err, "unable to fetch the Lease")
 		return ctrl.Result{}, err
 	}
+	logger := log.WithValues("namespace", req.Namespace, "lease", req.Name)
 
 	// ignore useless leases
 	if !strings.HasPrefix(lease.Name, "cilium-l2announce-") {
 		return ctrl.Result{}, nil
 	}
 
-	logger := log.WithValues("namespace", req.Namespace, "lease", req.Name)
-
 	currentHost := *lease.Spec.HolderIdentity
 	if currentHost == "" {
-		logger.Info("Lease doesn't have a holderIdentity, ignoring and reconcile on update")
+		logger.Info("Lease doesn't have a holderIdentity, ignoring and reconcile on next update")
 		return ctrl.Result{}, nil
 	}
 
 	// check the lease was already annotated with the service name generated the lease
 	isLeaseAnnotated := lease.Labels[haegressip.HAEgressGatewayPolicyName] != "" && lease.Labels[haegressip.HAEgressGatewayPolicyNamespace] != ""
 	if !isLeaseAnnotated {
-		logger.V(1).Info("lease doesn't have cilium-ha-egress annotations, we'll be updated in this reconcile if found")
+		logger.V(1).Info("lease doesn't have cilium-haegress-operator annotations, we'll be updated in this reconcile if found")
 
-		// Get the HAEgressGatewayPolicy that matches this lease
-		var egressHAIPs v1alpha1.HAEgressGatewayPolicyList
-		if err := r.List(ctx, &egressHAIPs); err != nil {
-			logger.Error(err, "unable to list HAEgressGatewayPolicy, check RBAC permissions or CRD not installed")
-			return ctrl.Result{RequeueAfter: haegressip.LeaseCheckRequeueAfter}, err
-		}
 		// Search for the HAEgressGatewayPolicy that matches the lease
-		lookupMatchingEgressHAIPs := r.List(ctx, &egressHAIPs, client.MatchingLabels{
+		var haEgressGatewayPolicyList v1alpha1.HAEgressGatewayPolicyList
+		lookupHAEgressGatewayPolicyResult := r.List(ctx, &haEgressGatewayPolicyList, client.MatchingLabels{
 			haegressip.HAEgressGatewayPolicyExpectedLeaseName: lease.Name})
-		if lookupMatchingEgressHAIPs != nil {
-			logger.Error(lookupMatchingEgressHAIPs, "unable to list HA Cilium Egress IPs, check RBAC permissions")
-			return ctrl.Result{}, lookupMatchingEgressHAIPs
+		if lookupHAEgressGatewayPolicyResult != nil {
+			logger.Error(lookupHAEgressGatewayPolicyResult, "unable to list HAEgressGatewayPolicy, check RBAC permissions or CRD not installed")
+			return ctrl.Result{RequeueAfter: haegressip.LeaseCheckRequeueAfter}, lookupHAEgressGatewayPolicyResult
 		}
 
-		logger.V(1).Info(fmt.Sprintf("Found %d haegressgatewaypolicies to evaluate", len(egressHAIPs.Items)))
-		for _, egressHAIP := range egressHAIPs.Items {
-			if fmt.Sprintf("cilium-l2announce-%s-%s", egressHAIP.Namespace, egressHAIP.Name) == lease.Name {
-				logger.Info(fmt.Sprintf("Updating lease %s with reference to parent HAEgressGatewayPolicy", lease.Name))
-				patchData := fmt.Sprintf(`{"metadata":{"labels":{"%s":"%s","%s":"%s"}}}`,
-					haegressip.HAEgressGatewayPolicyName, egressHAIP.Name,
-					haegressip.HAEgressGatewayPolicyNamespace, egressHAIP.Namespace)
-				if err := r.Patch(ctx, &lease, client.RawPatch(types.MergePatchType, []byte(patchData))); err != nil {
-					logger.Error(err, "unable to update lease with cilium-ha-egress annotations")
-					return ctrl.Result{}, err
-				}
-				logger.V(0).Info(fmt.Sprintf("Lease %s updated with cilium-ha-egress annotations", lease.Name))
-				isLeaseAnnotated = true
-				break
+		logger.V(1).Info(fmt.Sprintf("Found %d haegressgatewaypolicies to evaluate", len(haEgressGatewayPolicyList.Items)))
+		for _, egressHAIP := range haEgressGatewayPolicyList.Items {
+			logger.Info(fmt.Sprintf("Updating lease %s with reference to parent HAEgressGatewayPolicy", lease.Name))
+			patchData := fmt.Sprintf(`{"metadata":{"labels":{"%s":"%s","%s":"%s"}}}`,
+				haegressip.HAEgressGatewayPolicyName, egressHAIP.Name,
+				haegressip.HAEgressGatewayPolicyNamespace, r.EgressNamespace)
+			if err := r.Patch(ctx, &lease, client.RawPatch(types.MergePatchType, []byte(patchData))); err != nil {
+				logger.Error(err, "unable to update lease with cilium-haegress-operator annotations")
+				return ctrl.Result{}, err
 			}
+			logger.V(0).Info(fmt.Sprintf("Lease %s updated with cilium-haegress-operator annotations", lease.Name))
+			isLeaseAnnotated = true
+			break
 		}
 	}
 
 	if !isLeaseAnnotated {
-		logger.V(1).Info("lease doesn't have cilium-ha-egress annotations, ignoring")
+		logger.V(1).Info("lease doesn't have cilium-haegress-operator annotations, ignoring")
 		return ctrl.Result{}, nil
 
 	}

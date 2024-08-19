@@ -19,8 +19,8 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"github.com/angeloxx/cilium-ha-egress/api/v1alpha1"
-	haegressip "github.com/angeloxx/cilium-ha-egress/pkg"
+	"github.com/angeloxx/cilium-haegress-operator/api/v1alpha1"
+	haegressip "github.com/angeloxx/cilium-haegress-operator/pkg"
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"

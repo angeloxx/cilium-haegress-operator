@@ -1,6 +1,6 @@
-![Logo](https://github.com/angeloxx/cilium-ha-egress/raw/main/docs/img/cilium-ha-egress_mini.png)
+![Logo](https://github.com/angeloxx/cilium-haegress-operator/raw/main/docs/img/cilium-haegress-operator_mini.png)
 
-# cilium-ha-egress
+# cilium-haegress-operator
 This operator is used in an environment where you want to use Cilium as Ingress and Egress traffic manager. 
 
 ## Description
@@ -17,7 +17,7 @@ You can use Helm and the default settings to install the operator:
 
 ```shell
 helm upgrade -i kube-vip-watcher --create-namespace --namespace kube-vip-watcher
-     oci://registry-1.docker.io/angeloxx/cilium-ha-egress --version 0.0.6-next-51228cb-20240609-dirty-helm
+     oci://registry-1.docker.io/angeloxx/cilium-haegress-operator --version 0.0.6-next-51228cb-20240609-dirty-helm
 ```
 
 ## Configure
@@ -85,7 +85,7 @@ spec:
     egressIP: 192.168.1.1
 ```
 
-When kube-vip assigns the IP to a node, the cilium-ha-egress operator will update the egressGateway.nodeSelector in 
+When kube-vip assigns the IP to a node, the cilium-haegress-operator operator will update the egressGateway.nodeSelector in 
 order to match the node, using kube-vip.io/host label. You can associate multiple CiliumEgressGatewayPolicy to the same
 IP, the operator will support all of them.
 
