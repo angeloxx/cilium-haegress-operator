@@ -4,9 +4,9 @@
 This operator is used in an environment where you want to use Cilium as Ingress and Egress traffic manager. 
 
 ## Description
-Due the limitation of CiliumEgressGatewayPolicy, it is not possible to implement freely an HA solution where the policy defines
-two egress IP or the IP is moved automatically from a node to another.
-You can use kube-vip to create a virtual IP that is moved from a node to another in case of failure. When kube-vip
+Due the limitation of CiliumEgressGatewayPolicy, it is not possible to implement freely an HA solution where the policy 
+defines two egress IP or the IP is moved automatically from a node to another.
+You can use this project to create a virtual IP that is moved from a node to another in case of failure. When kube-vip
 associate a service to a node, it annotates associated service with kube-vip.io/vipHost: <node-name>. This operator
 watches for this annotation and updates the CiliumEgressPolicy to select the node where the service is running and
 implement a floating egress ip.

@@ -30,3 +30,10 @@ jobs:
         run: |
           make build-image
 
+      - name: Build Helm Chart
+        env:
+          IMAGE_REGISTRY_NAMESPACE: angeloxx
+          IMAGE_REGISTRY: docker.io
+          IMAGE_TAG_FORCED: latest
+        run: |
+          make build-helm-upload
