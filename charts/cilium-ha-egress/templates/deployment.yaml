@@ -44,6 +44,8 @@ spec:
           - {{ .Values.logLevel }}
           - -zap-encoder
           - {{ .Values.logFormat }}
+          - -egress-namespace
+          - {{ .Release.Namespace }}
           livenessProbe:
             httpGet:
               path: /healthz

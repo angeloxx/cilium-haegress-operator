@@ -4,20 +4,21 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.12.0
-  name: haegressips.cilium.angeloxx.ch
+  name: haegressgatewaypolicies.cilium.angeloxx.ch
 spec:
   group: cilium.angeloxx.ch
   names:
-    kind: HAEgressIP
-    listKind: HAEgressIPList
-    plural: haegressips
-    singular: haegressip
-  scope: Namespaced
+    kind: HAEgressGatewayPolicy
+    listKind: HAEgressGatewayPolicyList
+    plural: haegressgatewaypolicies
+    singular: haegressgatewaypolicy
+  scope: Cluster
   versions:
     - name: v1alpha1
       schema:
         openAPIV3Schema:
-          description: HAEgressIP is the Schema for the haegressips API
+          description: haEgressGatewayPolicy is the Schema for the haegressgatewaypolicies
+            API
           properties:
             apiVersion:
               description: 'APIVersion defines the versioned schema of this representation
@@ -248,7 +249,7 @@ spec:
                 - selectors
               type: object
             status:
-              description: HAEgressIPStatus defines the observed state of HAEgressIP
+              description: HAEgressGatewayPolicy defines the observed state of haEgressGatewayPolicy
               properties:
                 policyCreated:
                   type: boolean

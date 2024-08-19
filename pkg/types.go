@@ -1,11 +1,16 @@
-package ciliumhaegress
+package haegressip
+
+import "time"
 
 const (
-	HAEgressIPNamespace                 = "cilium.angeloxx.ch/haegressip-namespace"
-	HAEgressIPName                      = "cilium.angeloxx.ch/haegressip-name"
-	HAEgressIPExpectedLeaseName         = "cilium.angeloxx.ch/lease-name"
-	NodeNameAnnotation                  = "kubernetes.io/hostname"
-	EventEgressUpdateReason             = "Updated"
-	ServiceNamePrefix                   = "egress"
-	CiliumEgressGatewayPolicyNamePrefix = "egress"
+	HAEgressGatewayPolicyNamespace         = "cilium.angeloxx.ch/haegressgatewaypolicy-namespace"
+	HAEgressGatewayPolicyName              = "cilium.angeloxx.ch/haegressgatewaypolicy-name"
+	HAEgressGatewayPolicyExpectedLeaseName = "cilium.angeloxx.ch/lease-name"
+	NodeNameAnnotation                     = "kubernetes.io/hostname"
+	EventEgressUpdateReason                = "Updated"
+	ServiceNamePrefix                      = "haegress"
+	CiliumEgressGatewayPolicyNamePrefix    = "haegress"
+
+	LeaseCheckRequeueAfter                 = 10 * time.Second
+	HAEgressGatewayPolicyChcekRequeueAfter = 10 * time.Second
 )

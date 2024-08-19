@@ -30,7 +30,7 @@ resources:
   controller: true
   domain: angeloxx.ch
   group: cilium.angeloxx.ch
-  kind: HAEgressIP
+  kind: haEgressGatewayPolicy
   path: github.com/angeloxx/cilium-ha-egress/api/v1alpha1
   version: v1alpha1
 version: "3"

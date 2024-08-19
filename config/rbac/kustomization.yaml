@@ -20,5 +20,5 @@ resources:
 # default, aiding admins in cluster management. Those roles are
 # not used by the Project itself. You can comment the following lines
 # if you do not want those helpers be installed with your Project.
-- haegressip_editor_role.yaml
-- haegressip_viewer_role.yaml
+- haegressgatewaypolicy_editor_role.yaml
+- haegressgatewaypolicy_viewer_role.yaml

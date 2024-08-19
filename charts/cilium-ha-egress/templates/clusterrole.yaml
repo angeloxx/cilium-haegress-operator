@@ -12,5 +12,8 @@ rules:
     verbs: ["create","patch"]
   - apiGroups: ["cilium.io"]
     resources: ["ciliumegressgatewaypolicies"]
+    verbs: ["get", "list", "watch", "create", "update", "patch","delete"]
+  - apiGroups: ["cilium.angeloxx.ch"]
+    resources: ["haegressgatewaypolicies"]
     verbs: ["get", "list", "watch", "create", "update", "patch"]
   {{ end }}

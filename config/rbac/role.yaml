@@ -14,7 +14,7 @@ rules:
 - apiGroups:
   - cilium.angeloxx.ch
   resources:
-  - haegressips
+  - haegressgatewaypolicies
   verbs:
   - create
   - delete
@@ -26,13 +26,13 @@ rules:
 - apiGroups:
   - cilium.angeloxx.ch
   resources:
-  - haegressips/finalizers
+  - haegressgatewaypolicies/finalizers
   verbs:
   - update
 - apiGroups:
   - cilium.angeloxx.ch
   resources:
-  - haegressips/status
+  - haegressgatewaypolicies/status
   verbs:
   - get
   - patch

@@ -3,7 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
-	ciliumhaegress "github.com/angeloxx/cilium-ha-egress/pkg"
+	haegressip "github.com/angeloxx/cilium-ha-egress/pkg"
 	"github.com/cilium/cilium/pkg/hubble/relay/defaults"
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	"github.com/go-logr/logr"
@@ -22,6 +22,7 @@ type ServicesController struct {
 	Scheme          *runtime.Scheme
 	Recorder        record.EventRecorder
 	CiliumNamespace string
+	EgressNamespace string
 }
 
 // Reconcile handles a reconciliation request for a Lease with the
@@ -50,15 +51,15 @@ func (r *ServicesController) Reconcile(ctx context.Context, req ctrl.Request) (c
 	logger := log.WithValues("namespace", service.Namespace, "service", service.Name)
 
 	// Ignores services without labels managed by us
-	if service.Labels[ciliumhaegress.HAEgressIPName] == "" || service.Labels[ciliumhaegress.HAEgressIPNamespace] == "" {
+	if service.Labels[haegressip.HAEgressGatewayPolicyName] == "" || service.Labels[haegressip.HAEgressGatewayPolicyNamespace] == "" {
 		return ctrl.Result{}, nil
 	}
 
 	// Update CiliumEgressGatewayPolicy with the LoadBalancerIP
 	ciliumEgressGatewayPolicy := &ciliumv2.CiliumEgressGatewayPolicy{}
 	err := r.Get(ctx, types.NamespacedName{Name: fmt.Sprintf("%s-%s-%s",
-		ciliumhaegress.CiliumEgressGatewayPolicyNamePrefix,
-		service.Labels[ciliumhaegress.HAEgressIPNamespace], service.Labels[ciliumhaegress.HAEgressIPName])}, ciliumEgressGatewayPolicy)
+		haegressip.CiliumEgressGatewayPolicyNamePrefix,
+		service.Labels[haegressip.HAEgressGatewayPolicyNamespace], service.Labels[haegressip.HAEgressGatewayPolicyName])}, ciliumEgressGatewayPolicy)
 
 	if err != nil {
 		if apierrors.IsNotFound(err) {
