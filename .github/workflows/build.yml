@@ -38,4 +38,5 @@ jobs:
           IMAGE_REGISTRY: docker.io
           IMAGE_TAG_FORCED: latest
         run: |
+          make helm
           make build-helm-upload
