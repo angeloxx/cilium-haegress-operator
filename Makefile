@@ -21,7 +21,7 @@ ifeq ($(IMAGE_TAG_FORCED),)
 endif
 
 IMAGE_REGISTRY_NAMESPACE ?= angeloxx
-IMAGE_TAG_BASE ?= $(IMAGE_REGISTRY_NAMESPACE)/cilium-ha-egress
+IMAGE_TAG_BASE ?= $(IMAGE_REGISTRY_NAMESPACE)/cilium-haegress-operator
 IMAGE_REGISTRY ?= docker.io
 BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
 BUNDLE_GEN_FLAGS ?= -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
@@ -284,8 +284,8 @@ helm:
 
 .PHONY: build-helm
 build-helm:
-	sed -i -e 's|tag: ".*"|tag: "${VERSION}"|g' charts/cilium-ha-egress/values.yaml
-	sed -i -e 's|--version .*-helm|--version ${VERSION}-helm|g' README.md
+	sed -i 's|tag: ".*"|tag: "${VERSION}"|g' charts/cilium-ha-egress/values.yaml
+	sed -i 's|--version .*-helm|--version ${VERSION}-helm|g' README.md
 	helm kubeconform charts/cilium-ha-egress --skip CustomResourceDefinition
 	helm package charts/cilium-ha-egress -d helm/charts --version ${VERSION}-helm
 
