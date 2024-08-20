@@ -88,19 +88,24 @@ func (r *CiliumEgressGatewayPolicyReconciler) Reconcile(ctx context.Context, req
 		return ctrl.Result{RequeueAfter: haegressip.LeaseCheckRequeueAfter}, nil
 	}
 
-	host := *lease.Spec.HolderIdentity
-	currentHost := egressPolicy.Spec.EgressGateway.NodeSelector.MatchLabels[haegressip.NodeNameAnnotation]
+	currentHost := *lease.Spec.HolderIdentity
+	if currentHost == "" {
+		logger.Info("Lease doesn't have a holderIdentity, ignoring and reconcile on next update")
+		return ctrl.Result{}, nil
+	}
 
-	if currentHost == "" || currentHost != host {
+	policyHost := egressPolicy.Spec.EgressGateway.NodeSelector.MatchLabels[haegressip.NodeNameAnnotation]
+
+	if policyHost == "" || policyHost != currentHost {
 		// Modify egressPolicy nodeSepector to match the service
-		patchData := fmt.Sprintf(`{"spec":{"egressGateway":{"nodeSelector":{"matchLabels":{"%s":"%s"}}}}}`, haegressip.NodeNameAnnotation, host)
+		patchData := fmt.Sprintf(`{"spec":{"egressGateway":{"nodeSelector":{"matchLabels":{"%s":"%s"}}}}}`, haegressip.NodeNameAnnotation, currentHost)
 
-		logger.Info(fmt.Sprintf("Patching cilium egress gateway policy %s with host %s", egressPolicy.Name, host))
+		logger.Info(fmt.Sprintf("Patching cilium egress gateway policy %s with host %s", egressPolicy.Name, currentHost))
 		if err := r.Patch(ctx, &egressPolicy, client.RawPatch(types.MergePatchType, []byte(patchData))); err != nil {
 			logger.Error(err, fmt.Sprintf("Unable to patch cilium egress gateway policy %s", egressPolicy.Name))
-			return ctrl.Result{}, err
+			return ctrl.Result{RequeueAfter: haegressip.LeaseCheckRequeueAfter}, err
 		}
-		r.Recorder.Event(&egressPolicy, "Normal", haegressip.EventEgressUpdateReason, fmt.Sprintf("Updated with new nodeSelector %s=%s by %s/%s service", haegressip.NodeNameAnnotation, host, haegressgatewaypolicyNamespace, haegressgatewaypolicyName))
+		r.Recorder.Event(&egressPolicy, "Normal", haegressip.EventEgressUpdateReason, fmt.Sprintf("Updated with new nodeSelector %s=%s by %s/%s service", haegressip.NodeNameAnnotation, currentHost, haegressgatewaypolicyNamespace, haegressgatewaypolicyName))
 	}
 	return ctrl.Result{}, nil
 }

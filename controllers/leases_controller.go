@@ -128,8 +128,8 @@ func (r *LeasesController) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 		logger.V(0).Info(fmt.Sprintf("Patching cilium egress gateway policy %s with host %s", egressPolicy.Name, currentHost))
 		if err := r.Patch(ctx, &egressPolicy, client.RawPatch(types.MergePatchType, []byte(patchData))); err != nil {
-			logger.V(0).Info("unable to patch cilium egress gateway policy %s", egressPolicy.Name)
-			return ctrl.Result{}, err
+			logger.V(0).Info(fmt.Sprintf("unable to patch cilium egress gateway policy %s", egressPolicy.Name))
+			return ctrl.Result{RequeueAfter: haegressip.LeaseCheckRequeueAfter}, err
 		}
 		r.Recorder.Event(&egressPolicy, "Normal", haegressip.EventEgressUpdateReason, fmt.Sprintf("Updated with new nodeSelector %s=%s by %s/%s service", haegressip.NodeNameAnnotation, currentHost, req.Namespace, req.Name))
 
