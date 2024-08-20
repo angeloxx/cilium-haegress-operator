@@ -284,10 +284,10 @@ helm:
 
 .PHONY: build-helm
 build-helm:
-	sed -i -e 's|tag: ".*"|tag: "${VERSION}"|g' charts/cilium-haegress-operator/values.yaml
-	sed -i -e 's|--version .*-helm|--version ${VERSION}-helm|g' README.md
-	helm kubeconform charts/cilium-haegress-operator
-	helm package charts/cilium-haegress-operator -d helm/charts --version ${VERSION}-helm
+	sed -i 's|tag: ".*"|tag: "${VERSION}"|g' charts/cilium-ha-egress/values.yaml
+	sed -i 's|--version .*-helm|--version ${VERSION}-helm|g' README.md
+	helm kubeconform charts/cilium-ha-egress --skip CustomResourceDefinition
+	helm package charts/cilium-ha-egress -d helm/charts --version ${VERSION}-helm
 
 	helm repo index charts/charts --url https://angeloxx.github.io/cilium-haegress-operator
 

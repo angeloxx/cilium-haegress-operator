@@ -16,6 +16,8 @@ jobs:
 
       - name: Setup Ko
         uses: ko-build/setup-ko@v0.6
+      - name: Set up Kubeconform
+        uses: bmuschko/setup-kubeconform@v1
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -30,3 +32,11 @@ jobs:
         run: |
           make build-image
 
+      - name: Build Helm Chart
+        env:
+          IMAGE_REGISTRY_NAMESPACE: angeloxx
+          IMAGE_REGISTRY: docker.io
+          IMAGE_TAG_FORCED: latest
+        run: |
+          make helm
+          make build-helm-upload

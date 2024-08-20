@@ -8,7 +8,7 @@ image:
   repository: angeloxx/cilium-haegress-operator
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "0.0.6-next-51228cb-20240609-dirty"
+  tag: "0.0.6-next-4aa706d-20240819-dirty"
 
 # Can be one of 'debug', 'info', 'error'
 logLevel: "info"
