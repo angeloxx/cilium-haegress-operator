@@ -45,7 +45,7 @@ func (r *ServicesController) Reconcile(ctx context.Context, req ctrl.Request) (c
 			return ctrl.Result{}, nil
 		}
 		log.Error(err, "unable to fetch the Service, check RBAC permissions")
-		return ctrl.Result{}, err
+		return ctrl.Result{RequeueAfter: haegressip.HAEgressGatewayPolicyChcekRequeueAfter}, err
 	}
 
 	logger := log.WithValues("namespace", service.Namespace, "service", service.Name)
@@ -62,7 +62,7 @@ func (r *ServicesController) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.Info("CiliumEgressGatewayPolicy not found, we probably are waiting for automatic creation")
+			logger.Info(fmt.Sprintf("CiliumEgressGatewayPolicy %s-%s not found, we probably are waiting for automatic creation", service.Labels[haegressip.HAEgressGatewayPolicyNamespace], service.Labels[haegressip.HAEgressGatewayPolicyName]))
 			return ctrl.Result{RequeueAfter: defaults.HealthCheckInterval}, err
 		} else {
 			logger.Error(err, "unable to fetch the CiliumEgressGatewayPolicy, review RBAC permissions")
@@ -70,17 +70,41 @@ func (r *ServicesController) Reconcile(ctx context.Context, req ctrl.Request) (c
 		}
 	}
 
+	policyHost := string(ciliumEgressGatewayPolicy.Spec.EgressGateway.NodeSelector.MatchLabels[haegressip.NodeNameAnnotation])
+	currentHost := string(service.Annotations[haegressip.KubeVIPVipHostAnnotation])
+
 	if len(service.Status.LoadBalancer.Ingress) > 0 {
 		if ciliumEgressGatewayPolicy.Spec.EgressGateway.EgressIP != service.Status.LoadBalancer.Ingress[0].IP {
-
 			ciliumEgressGatewayPolicy.Spec.EgressGateway.EgressIP = service.Status.LoadBalancer.Ingress[0].IP
 			if err := r.Update(ctx, ciliumEgressGatewayPolicy); err != nil {
-				logger.Error(err, "unable to update the CiliumEgressGatewayPolicy")
-				return ctrl.Result{}, err
+				logger.Error(err, "unable to update the CiliumEgressGatewayPolicy with new assigned IP, retry later")
+				return ctrl.Result{RequeueAfter: haegressip.HAEgressGatewayPolicyChcekRequeueAfter}, nil
 			}
 			logger.Info("Updated CiliumEgressGatewayPolicy with LoadBalancerIP", "LoadBalancerIP", service.Status.LoadBalancer.Ingress[0].IP)
 		}
 	}
+
+	if currentHost == "" {
+		logger.V(1).Info(fmt.Sprintf("Service is still not assigned, ignoring."))
+		return ctrl.Result{}, nil
+	}
+
+	if policyHost == currentHost {
+		logger.V(1).Info(fmt.Sprintf("EgressGatewayPolicy already configured as expected with host %s, ignoring.", currentHost))
+		return ctrl.Result{}, nil
+	}
+
+	logger.V(0).Info(fmt.Sprintf("EgressGatewayPolicy should be updated from %s to %s.", policyHost, currentHost))
+
+	// Modify egressPolicy nodeSelector to match the service
+	patchData := fmt.Sprintf(`{"spec":{"egressGateway":{"nodeSelector":{"matchLabels":{"%s":"%s"}}}}}`, haegressip.NodeNameAnnotation, currentHost)
+
+	logger.V(0).Info(fmt.Sprintf("Patching cilium egress gateway policy %s with host %s", ciliumEgressGatewayPolicy.Name, currentHost))
+	if err := r.Patch(ctx, ciliumEgressGatewayPolicy, client.RawPatch(types.MergePatchType, []byte(patchData))); err != nil {
+		logger.V(0).Info(fmt.Sprintf("Unable to patch cilium egress gateway policy %s", ciliumEgressGatewayPolicy.Name))
+		return ctrl.Result{RequeueAfter: haegressip.LeaseCheckRequeueAfter}, err
+	}
+	r.Recorder.Event(ciliumEgressGatewayPolicy, "Normal", haegressip.EventEgressUpdateReason, fmt.Sprintf("Updated with new nodeSelector %s=%s by %s/%s service", haegressip.NodeNameAnnotation, currentHost, req.Namespace, req.Name))
 
 	return ctrl.Result{}, nil
 }

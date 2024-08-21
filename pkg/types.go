@@ -9,6 +9,8 @@ const (
 	NodeNameAnnotation                     = "kubernetes.io/hostname"
 	EventEgressUpdateReason                = "Updated"
 
+	KubeVIPVipHostAnnotation = "kube-vip.io/vipHost"
+
 	LeaseCheckRequeueAfter                 = 10 * time.Second
 	HAEgressGatewayPolicyChcekRequeueAfter = 10 * time.Second
 )

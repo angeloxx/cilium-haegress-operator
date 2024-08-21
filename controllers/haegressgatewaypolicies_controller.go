@@ -38,10 +38,11 @@ import (
 // HAEgressGatewayPolicyReconciler reconciles a HAEgressGatewayPolicy object
 type HAEgressGatewayPolicyReconciler struct {
 	client.Client
-	Log             logr.Logger
-	Scheme          *runtime.Scheme
-	Recorder        record.EventRecorder
-	EgressNamespace string
+	Log               logr.Logger
+	Scheme            *runtime.Scheme
+	Recorder          record.EventRecorder
+	EgressNamespace   string
+	LoadBalancerClass string
 }
 
 //+kubebuilder:rbac:groups=cilium.angeloxx.ch,resources=haegressgatewaypolicies,verbs=get;list;watch;create;update;patch;delete
@@ -73,11 +74,15 @@ func (r *HAEgressGatewayPolicyReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, err
 	}
 
-	leassExpectedName := fmt.Sprintf("cilium-l2announce-%s-%s",
-		r.EgressNamespace, haEgressGatewayPolicy.Name)
+	serviceNamespace := r.EgressNamespace
+	if haEgressGatewayPolicy.Annotations[haegressip.HAEgressGatewayPolicyNamespace] != "" {
+		serviceNamespace = haEgressGatewayPolicy.Annotations[haegressip.HAEgressGatewayPolicyNamespace]
+	}
+	leaseExpectedName := fmt.Sprintf("cilium-l2announce-%s-%s",
+		serviceNamespace, haEgressGatewayPolicy.Name)
 
-	if haEgressGatewayPolicy.Labels[haegressip.HAEgressGatewayPolicyExpectedLeaseName] != leassExpectedName {
-		haEgressGatewayPolicy.Labels[haegressip.HAEgressGatewayPolicyExpectedLeaseName] = leassExpectedName
+	if haEgressGatewayPolicy.Labels[haegressip.HAEgressGatewayPolicyExpectedLeaseName] != leaseExpectedName {
+		haEgressGatewayPolicy.Labels[haegressip.HAEgressGatewayPolicyExpectedLeaseName] = leaseExpectedName
 
 		if err := r.Update(ctx, &haEgressGatewayPolicy); err != nil {
 			log.Error(err, "unable to update HAEgressGatewayPolicy, please check RBAC permissions")
@@ -102,18 +107,26 @@ func (r *HAEgressGatewayPolicyReconciler) UpdateOrCreateCiliumEgressGatewayPolic
 	log := ctrl.LoggerFrom(ctx)
 	logger := log.WithValues("HAEgressGatewayPolicy", haEgressGatewayPolicy.Name)
 
+	serviceNamespace := r.EgressNamespace
+	if haEgressGatewayPolicy.Annotations[haegressip.HAEgressGatewayPolicyNamespace] != "" {
+		serviceNamespace = haEgressGatewayPolicy.Annotations[haegressip.HAEgressGatewayPolicyNamespace]
+	}
+	/*
+		leaseExpectedName := fmt.Sprintf("cilium-l2announce-%s-%s",
+			serviceNamespace, haEgressGatewayPolicy.Name)
+		ciliumEgressGatewayPolicyNew.Labels[haegressip.HAEgressGatewayPolicyExpectedLeaseName] = leaseExpectedName
+	*/
+
 	ciliumEgressGatewayPolicyNew := &ciliumv2.CiliumEgressGatewayPolicy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: fmt.Sprintf("%s-%s",
-				r.EgressNamespace,
+				serviceNamespace,
 				haEgressGatewayPolicy.Name),
 			Labels:      haEgressGatewayPolicy.Labels,
 			Annotations: haEgressGatewayPolicy.Annotations,
 		},
 		Spec: haEgressGatewayPolicy.Spec,
 	}
-	ciliumEgressGatewayPolicyNew.Labels[haegressip.HAEgressGatewayPolicyNamespace] = r.EgressNamespace
-	ciliumEgressGatewayPolicyNew.Labels[haegressip.HAEgressGatewayPolicyName] = haEgressGatewayPolicy.Name
 
 	// Set HAEgressGatewayPolicy instance as the owner and controller
 	if err := controllerutil.SetControllerReference(haEgressGatewayPolicy, ciliumEgressGatewayPolicyNew, r.Scheme); err != nil {
@@ -171,15 +184,21 @@ func (r *HAEgressGatewayPolicyReconciler) UpdateOrCreateCiliumEgressGatewayPolic
 func (r *HAEgressGatewayPolicyReconciler) UpdateOrCreateService(ctx context.Context, haEgressGatewayPolicy *v1alpha1.HAEgressGatewayPolicy) error {
 	log := ctrl.LoggerFrom(ctx)
 
+	serviceNamespace := r.EgressNamespace
+	if haEgressGatewayPolicy.Annotations[haegressip.HAEgressGatewayPolicyNamespace] != "" {
+		serviceNamespace = haEgressGatewayPolicy.Annotations[haegressip.HAEgressGatewayPolicyNamespace]
+	}
+
 	// Define the service and copy all annotations from the HAEgressGatewayPolicy instance
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        haEgressGatewayPolicy.Name,
-			Namespace:   r.EgressNamespace,
+			Namespace:   serviceNamespace,
 			Labels:      haEgressGatewayPolicy.Labels,
 			Annotations: haEgressGatewayPolicy.Annotations,
 		},
 		Spec: corev1.ServiceSpec{
+			LoadBalancerClass: &r.LoadBalancerClass,
 			Ports: []corev1.ServicePort{
 				{
 					Name:     "nope",
@@ -190,12 +209,12 @@ func (r *HAEgressGatewayPolicyReconciler) UpdateOrCreateService(ctx context.Cont
 			Type: corev1.ServiceTypeLoadBalancer,
 			// Points nowhere, is a serviceless service used to craete the IP object
 			Selector: map[string]string{
-				haegressip.HAEgressGatewayPolicyNamespace: r.EgressNamespace,
+				haegressip.HAEgressGatewayPolicyNamespace: serviceNamespace,
 				haegressip.HAEgressGatewayPolicyName:      haEgressGatewayPolicy.Name,
 			},
 		},
 	}
-	service.Labels[haegressip.HAEgressGatewayPolicyNamespace] = r.EgressNamespace
+	service.Labels[haegressip.HAEgressGatewayPolicyNamespace] = serviceNamespace
 	service.Labels[haegressip.HAEgressGatewayPolicyName] = haEgressGatewayPolicy.Name
 
 	// Set HAEgressGatewayPolicy instance as the owner and controller

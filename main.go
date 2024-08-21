@@ -58,17 +58,20 @@ func main() {
 	var probeAddr string
 	var haegressNamespace string
 	var ciliumNamespace string
+	var loadBalancerClass string
 	var k8sClientQPS int
 	var k8sClientBurst int
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	flag.StringVar(&haegressNamespace, "egress-namespace", "egress-system", "The namespace where the supporting services are installed")
+	flag.StringVar(&haegressNamespace, "egress-default-namespace", "egress-system", "The namespace where the services will be created if no namespaces were specified")
 	flag.StringVar(&ciliumNamespace, "cilium-namespace", "kube-system", "The namespace where Cilium is installed")
+	flag.StringVar(&loadBalancerClass, "load-balancer-class", "kube-vip.io/kube-vip-class", "The LoadBalancer class to use for the services")
+
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	flag.IntVar(&k8sClientQPS, "k8s-client-qps", 25, "The maximum QPS to the Kubernetes API server")
+	flag.IntVar(&k8sClientQPS, "k8s-client-qps", 20, "The maximum QPS to the Kubernetes API server")
 	flag.IntVar(&k8sClientBurst, "k8s-client-burst", 100, "The maximum burst for throttle to the Kubernetes API server")
 	opts := zap.Options{
 		Development: false,
@@ -111,11 +114,12 @@ func main() {
 	}
 
 	if err = (&controllers.HAEgressGatewayPolicyReconciler{
-		Client:          mgr.GetClient(),
-		Log:             ctrl.Log.WithName("controllers").WithName("HAEgressGatewayPolicy"),
-		Scheme:          mgr.GetScheme(),
-		Recorder:        mgr.GetEventRecorderFor("cilium-haegress-operator"),
-		EgressNamespace: haegressNamespace,
+		Client:            mgr.GetClient(),
+		Log:               ctrl.Log.WithName("controllers").WithName("HAEgressGatewayPolicy"),
+		Scheme:            mgr.GetScheme(),
+		Recorder:          mgr.GetEventRecorderFor("cilium-haegress-operator"),
+		EgressNamespace:   haegressNamespace,
+		LoadBalancerClass: loadBalancerClass,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "HAEgressGatewayPolicy")
 		os.Exit(1)
@@ -130,28 +134,30 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Services")
 		os.Exit(1)
 	}
-	if err = (&controllers.CiliumEgressGatewayPolicyReconciler{
-		Client:          mgr.GetClient(),
-		Log:             ctrl.Log.WithName("controllers").WithName("CiliumEgressGatewayPolicy"),
-		Scheme:          mgr.GetScheme(),
-		Recorder:        mgr.GetEventRecorderFor("cilium-haegress-operator"),
-		CiliumNamespace: ciliumNamespace,
-		EgressNamespace: haegressNamespace,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller CiliumEgressGatewayPolicy")
-		os.Exit(1)
-	}
-	if err = (&controllers.LeasesController{
-		Client:          mgr.GetClient(),
-		Log:             ctrl.Log.WithName("controllers").WithName("Leases"),
-		Scheme:          mgr.GetScheme(),
-		Recorder:        mgr.GetEventRecorderFor("cilium-haegress-operator"),
-		CiliumNamespace: ciliumNamespace,
-		EgressNamespace: haegressNamespace,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Unable to create controller Leases")
-		os.Exit(1)
-	}
+	/*
+			if err = (&controllers.CiliumEgressGatewayPolicyReconciler{
+				Client:          mgr.GetClient(),
+				Log:             ctrl.Log.WithName("controllers").WithName("CiliumEgressGatewayPolicy"),
+				Scheme:          mgr.GetScheme(),
+				Recorder:        mgr.GetEventRecorderFor("cilium-haegress-operator"),
+				CiliumNamespace: ciliumNamespace,
+				EgressNamespace: haegressNamespace,
+			}).SetupWithManager(mgr); err != nil {
+				setupLog.Error(err, "unable to create controller CiliumEgressGatewayPolicy")
+				os.Exit(1)
+			}
+		if err = (&controllers.LeasesController{
+			Client:          mgr.GetClient(),
+			Log:             ctrl.Log.WithName("controllers").WithName("Leases"),
+			Scheme:          mgr.GetScheme(),
+			Recorder:        mgr.GetEventRecorderFor("cilium-haegress-operator"),
+			CiliumNamespace: ciliumNamespace,
+			EgressNamespace: haegressNamespace,
+		}).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "Unable to create controller Leases")
+			os.Exit(1)
+		}
+	*/
 
 	//+kubebuilder:scaffold:builder
 
