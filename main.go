@@ -134,30 +134,6 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Services")
 		os.Exit(1)
 	}
-	/*
-			if err = (&controllers.CiliumEgressGatewayPolicyReconciler{
-				Client:          mgr.GetClient(),
-				Log:             ctrl.Log.WithName("controllers").WithName("CiliumEgressGatewayPolicy"),
-				Scheme:          mgr.GetScheme(),
-				Recorder:        mgr.GetEventRecorderFor("cilium-haegress-operator"),
-				CiliumNamespace: ciliumNamespace,
-				EgressNamespace: haegressNamespace,
-			}).SetupWithManager(mgr); err != nil {
-				setupLog.Error(err, "unable to create controller CiliumEgressGatewayPolicy")
-				os.Exit(1)
-			}
-		if err = (&controllers.LeasesController{
-			Client:          mgr.GetClient(),
-			Log:             ctrl.Log.WithName("controllers").WithName("Leases"),
-			Scheme:          mgr.GetScheme(),
-			Recorder:        mgr.GetEventRecorderFor("cilium-haegress-operator"),
-			CiliumNamespace: ciliumNamespace,
-			EgressNamespace: haegressNamespace,
-		}).SetupWithManager(mgr); err != nil {
-			setupLog.Error(err, "Unable to create controller Leases")
-			os.Exit(1)
-		}
-	*/
 
 	//+kubebuilder:scaffold:builder
 
