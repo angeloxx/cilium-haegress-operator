@@ -58,7 +58,7 @@ func (r *ServicesController) Reconcile(ctx context.Context, req ctrl.Request) (c
 	// Update CiliumEgressGatewayPolicy with the LoadBalancerIP
 	ciliumEgressGatewayPolicy := &ciliumv2.CiliumEgressGatewayPolicy{}
 	err := r.Get(ctx, types.NamespacedName{Name: fmt.Sprintf("%s-%s",
-		service.Labels[haegressip.HAEgressGatewayPolicyNamespace], service.Labels[haegressip.HAEgressGatewayPolicyName])}, ciliumEgressGatewayPolicy)
+		service.Namespace, service.Name)}, ciliumEgressGatewayPolicy)
 
 	if err != nil {
 		if apierrors.IsNotFound(err) {

@@ -74,21 +74,23 @@ func (r *HAEgressGatewayPolicyReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, err
 	}
 
-	serviceNamespace := r.EgressNamespace
-	if haEgressGatewayPolicy.Annotations[haegressip.HAEgressGatewayPolicyNamespace] != "" {
-		serviceNamespace = haEgressGatewayPolicy.Annotations[haegressip.HAEgressGatewayPolicyNamespace]
-	}
-	leaseExpectedName := fmt.Sprintf("cilium-l2announce-%s-%s",
-		serviceNamespace, haEgressGatewayPolicy.Name)
-
-	if haEgressGatewayPolicy.Labels[haegressip.HAEgressGatewayPolicyExpectedLeaseName] != leaseExpectedName {
-		haEgressGatewayPolicy.Labels[haegressip.HAEgressGatewayPolicyExpectedLeaseName] = leaseExpectedName
-
-		if err := r.Update(ctx, &haEgressGatewayPolicy); err != nil {
-			log.Error(err, "unable to update HAEgressGatewayPolicy, please check RBAC permissions")
-			return ctrl.Result{RequeueAfter: haegressip.HAEgressGatewayPolicyChcekRequeueAfter}, err
+	/*
+		serviceNamespace := r.EgressNamespace
+		if haEgressGatewayPolicy.Annotations[haegressip.HAEgressGatewayPolicyNamespace] != "" {
+			serviceNamespace = haEgressGatewayPolicy.Annotations[haegressip.HAEgressGatewayPolicyNamespace]
 		}
-	}
+		leaseExpectedName := fmt.Sprintf("cilium-l2announce-%s-%s",
+			serviceNamespace, haEgressGatewayPolicy.Name)
+		if haEgressGatewayPolicy.Labels[haegressip.HAEgressGatewayPolicyExpectedLeaseName] != leaseExpectedName {
+			haEgressGatewayPolicy.Labels[haegressip.HAEgressGatewayPolicyExpectedLeaseName] = leaseExpectedName
+
+			if err := r.Update(ctx, &haEgressGatewayPolicy); err != nil {
+				log.Error(err, "unable to update HAEgressGatewayPolicy, please check RBAC permissions")
+				return ctrl.Result{RequeueAfter: haegressip.HAEgressGatewayPolicyChcekRequeueAfter}, err
+			}
+		}
+
+	*/
 	if err := r.UpdateOrCreateCiliumEgressGatewayPolicy(ctx, &haEgressGatewayPolicy); err != nil {
 		log.Error(err, "unable to create or update CiliumEgressGatewayPolicy, please check RBAC permissions")
 		return ctrl.Result{RequeueAfter: haegressip.HAEgressGatewayPolicyChcekRequeueAfter}, err
@@ -135,8 +137,8 @@ func (r *HAEgressGatewayPolicyReconciler) UpdateOrCreateCiliumEgressGatewayPolic
 
 	ciliumEgressGatewayPolicyExist := &ciliumv2.CiliumEgressGatewayPolicy{}
 	err := r.Get(ctx, types.NamespacedName{
-		Name:      ciliumEgressGatewayPolicyNew.Name,
-		Namespace: ciliumEgressGatewayPolicyNew.Namespace}, ciliumEgressGatewayPolicyExist)
+		Name: ciliumEgressGatewayPolicyNew.Name,
+	}, ciliumEgressGatewayPolicyExist)
 
 	if err != nil && apierrors.IsNotFound(err) {
 		logger.Info("Creating a new CiliumEgressGatewayPolicy for HAEgressGatewayPolicy",
@@ -189,6 +191,8 @@ func (r *HAEgressGatewayPolicyReconciler) UpdateOrCreateService(ctx context.Cont
 		serviceNamespace = haEgressGatewayPolicy.Annotations[haegressip.HAEgressGatewayPolicyNamespace]
 	}
 
+	// @TODO: check if target namespace exists
+
 	// Define the service and copy all annotations from the HAEgressGatewayPolicy instance
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -207,12 +211,16 @@ func (r *HAEgressGatewayPolicyReconciler) UpdateOrCreateService(ctx context.Cont
 				},
 			},
 			Type: corev1.ServiceTypeLoadBalancer,
-			// Points nowhere, is a serviceless service used to craete the IP object
+			// Points nowhere, is a serviceless service used to create the IP object
 			Selector: map[string]string{
 				haegressip.HAEgressGatewayPolicyNamespace: serviceNamespace,
 				haegressip.HAEgressGatewayPolicyName:      haEgressGatewayPolicy.Name,
 			},
 		},
+	}
+
+	if service.Labels == nil {
+		service.Labels = make(map[string]string)
 	}
 	service.Labels[haegressip.HAEgressGatewayPolicyNamespace] = serviceNamespace
 	service.Labels[haegressip.HAEgressGatewayPolicyName] = haEgressGatewayPolicy.Name
