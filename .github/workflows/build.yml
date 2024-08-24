@@ -36,7 +36,7 @@ jobs:
         env:
           IMAGE_REGISTRY_NAMESPACE: angeloxx
           IMAGE_REGISTRY: docker.io
-          IMAGE_TAG_FORCED: latest
+          IMAGE_TAG_FORCED: 0.0.0-latest
         run: |
           make helm
           make build-helm-upload
