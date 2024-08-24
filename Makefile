@@ -16,10 +16,10 @@ ifneq ($(shell git status --porcelain),)
 endif
 
 IMAGE_TAG := ${VERSION}
-ifeq ($(IMAGE_TAG_FORCED),)
+ifneq ($(IMAGE_TAG_FORCED),)
 	IMAGE_TAG := ${IMAGE_TAG_FORCED}
 endif
-ifeq ($(HELM_TAG_FORCED),)
+ifneq ($(HELM_TAG_FORCED),)
 	HELM_TAG := ${HELM_TAG_FORCED}
 endif
 
@@ -136,7 +136,7 @@ PLATFORMS ?= linux/arm64,linux/amd64
 .PHONY: build-image
 build-image: ko # vulncheck
 	KO_DOCKER_REPO=${IMAGE} \
-    ko build --tags ${IMAGE_TAG_FORCED} --bare --sbom ${IMG_SBOM} \
+    ko build --tags ${IMAGE_TAG} --bare --sbom ${IMG_SBOM} \
       --image-label org.opencontainers.image.source="https://github.com/angeloxx/cilium-haegress-operator" \
       --image-label org.opencontainers.image.revision=$(shell git rev-parse HEAD) \
       --platform=${PLATFORMS}  --push=true .
