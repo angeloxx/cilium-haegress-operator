@@ -1,4 +1,4 @@
-apiVersion: cilium.angeloxx.ch/v1alpha1
+apiVersion: cilium.angeloxx.ch/v2
 kind: haEgressGatewayPolicy
 metadata:
   labels:

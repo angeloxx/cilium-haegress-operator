@@ -4,9 +4,6 @@ kind: ClusterRole
 metadata:
   name: {{ include "cilium-haegress-operator.fullname" . }}-cr
 rules:
-  - apiGroups: ["coordination.k8s.io"]
-    resources: ["leases"]
-    verbs: ["get", "list", "watch"]
   - apiGroups: [""]
     resources: ["events"]
     verbs: ["create","patch"]

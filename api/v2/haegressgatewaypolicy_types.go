@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 // ref https://github.com/cilium/cilium/blob/main/pkg/k8s/apis/cilium.io/v2/cegp_types.go
-package v1alpha1
+package v2
 
 import (
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"

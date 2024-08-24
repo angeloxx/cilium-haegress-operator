@@ -43,7 +43,6 @@ rules:
   - ciliumegressgatewaypolicies
   verbs:
   - get
-  - list
   - patch
   - update
 - apiGroups:
@@ -53,14 +52,4 @@ rules:
   verbs:
   - get
   - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - services
-  verbs:
-  - get
-  - list
-  - patch
-  - update
   - watch

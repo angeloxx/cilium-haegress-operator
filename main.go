@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	ciliumv1alpha1 "github.com/angeloxx/cilium-haegress-operator/api/v1alpha1"
+	ciliumv1alpha1 "github.com/angeloxx/cilium-haegress-operator/api/v2"
 	"github.com/angeloxx/cilium-haegress-operator/controllers"
 	//+kubebuilder:scaffold:imports
 )

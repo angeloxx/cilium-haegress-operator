@@ -14,7 +14,7 @@ spec:
     singular: haegressgatewaypolicy
   scope: Cluster
   versions:
-    - name: v1alpha1
+    - name: v2
       schema:
         openAPIV3Schema:
           description: haEgressGatewayPolicy is the Schema for the haegressgatewaypolicies

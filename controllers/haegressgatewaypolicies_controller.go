@@ -19,7 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"github.com/angeloxx/cilium-haegress-operator/api/v1alpha1"
+	haegressv2 "github.com/angeloxx/cilium-haegress-operator/api/v2"
 	haegressip "github.com/angeloxx/cilium-haegress-operator/pkg"
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	"github.com/go-logr/logr"
@@ -61,7 +61,7 @@ type HAEgressGatewayPolicyReconciler struct {
 func (r *HAEgressGatewayPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 
-	var haEgressGatewayPolicy v1alpha1.HAEgressGatewayPolicy
+	var haEgressGatewayPolicy haegressv2.HAEgressGatewayPolicy
 
 	if err := r.Get(ctx, req.NamespacedName, &haEgressGatewayPolicy); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -105,7 +105,7 @@ func (r *HAEgressGatewayPolicyReconciler) Reconcile(ctx context.Context, req ctr
 	return ctrl.Result{}, nil
 }
 
-func (r *HAEgressGatewayPolicyReconciler) UpdateOrCreateCiliumEgressGatewayPolicy(ctx context.Context, haEgressGatewayPolicy *v1alpha1.HAEgressGatewayPolicy) error {
+func (r *HAEgressGatewayPolicyReconciler) UpdateOrCreateCiliumEgressGatewayPolicy(ctx context.Context, haEgressGatewayPolicy *haegressv2.HAEgressGatewayPolicy) error {
 	log := ctrl.LoggerFrom(ctx)
 	logger := log.WithValues("HAEgressGatewayPolicy", haEgressGatewayPolicy.Name)
 
@@ -183,7 +183,7 @@ func (r *HAEgressGatewayPolicyReconciler) UpdateOrCreateCiliumEgressGatewayPolic
 	return nil
 }
 
-func (r *HAEgressGatewayPolicyReconciler) UpdateOrCreateService(ctx context.Context, haEgressGatewayPolicy *v1alpha1.HAEgressGatewayPolicy) error {
+func (r *HAEgressGatewayPolicyReconciler) UpdateOrCreateService(ctx context.Context, haEgressGatewayPolicy *haegressv2.HAEgressGatewayPolicy) error {
 	log := ctrl.LoggerFrom(ctx)
 
 	serviceNamespace := r.EgressNamespace
@@ -269,6 +269,6 @@ func (r *HAEgressGatewayPolicyReconciler) UpdateOrCreateService(ctx context.Cont
 // SetupWithManager sets up the controller with the Manager.
 func (r *HAEgressGatewayPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.HAEgressGatewayPolicy{}).
+		For(&haegressv2.HAEgressGatewayPolicy{}).
 		Complete(r)
 }
