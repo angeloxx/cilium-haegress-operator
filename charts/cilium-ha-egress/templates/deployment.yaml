@@ -44,7 +44,7 @@ spec:
           - {{ .Values.logLevel }}
           - -zap-encoder
           - {{ .Values.logFormat }}
-          - -egress-namespace
+          - -egress-default-namespace
           - {{ .Release.Namespace }}
           livenessProbe:
             httpGet:

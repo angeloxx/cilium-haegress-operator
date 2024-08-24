@@ -57,7 +57,6 @@ func main() {
 	var enableLeaderElection bool
 	var probeAddr string
 	var haegressNamespace string
-	var ciliumNamespace string
 	var loadBalancerClass string
 	var k8sClientQPS int
 	var k8sClientBurst int
@@ -65,7 +64,6 @@ func main() {
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.StringVar(&haegressNamespace, "egress-default-namespace", "egress-system", "The namespace where the services will be created if no namespaces were specified")
-	flag.StringVar(&ciliumNamespace, "cilium-namespace", "kube-system", "The namespace where Cilium is installed")
 	flag.StringVar(&loadBalancerClass, "load-balancer-class", "kube-vip.io/kube-vip-class", "The LoadBalancer class to use for the services")
 
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
