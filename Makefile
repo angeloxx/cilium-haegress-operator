@@ -19,6 +19,11 @@ IMAGE_TAG := ${VERSION}
 ifeq ($(IMAGE_TAG_FORCED),)
 	IMAGE_TAG := ${IMAGE_TAG_FORCED}
 endif
+ifeq ($(HELM_TAG_FORCED),)
+	HELM_TAG := ${HELM_TAG_FORCED}
+endif
+
+HELM_TAG_FORCED
 
 IMAGE_REGISTRY_NAMESPACE ?= angeloxx
 IMAGE_TAG_BASE ?= $(IMAGE_REGISTRY_NAMESPACE)/cilium-haegress-operator
@@ -284,15 +289,15 @@ helm:
 
 .PHONY: build-helm
 build-helm:
-	sed -i 's|tag: ".*"|tag: "${IMAGE_TAG_FORCED}"|g' charts/cilium-ha-egress/values.yaml
-	sed -i 's|--version .*-helm|--version ${IMAGE_TAG_FORCED}-helm|g' README.md
+	sed -i 's|tag: ".*"|tag: "${IMAGE_TAG}"|g' charts/cilium-ha-egress/values.yaml
+	sed -i 's|--version .*-helm|--version ${HELM_TAG}-helm|g' README.md
 	helm kubeconform charts/cilium-ha-egress --skip CustomResourceDefinition
-	helm package charts/cilium-ha-egress -d helm/charts --version ${IMAGE_TAG_FORCED}-helm
+	helm package charts/cilium-ha-egress -d helm/charts --version ${HELM_TAG}-helm
 
 	helm repo index charts/charts --url https://angeloxx.github.io/cilium-haegress-operator
 
 .PHONY: build-helm-upload
 build-helm-upload: build-helm
-	helm push helm/charts/cilium-haegress-operator-$(IMAGE_TAG_FORCED)-helm.tgz \
+	helm push helm/charts/cilium-haegress-operator-$(HELM_TAG_FORCED)-helm.tgz \
 		oci://registry-1.docker.io/$(IMAGE_REGISTRY_NAMESPACE)
 
