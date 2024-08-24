@@ -23,8 +23,6 @@ ifeq ($(HELM_TAG_FORCED),)
 	HELM_TAG := ${HELM_TAG_FORCED}
 endif
 
-HELM_TAG_FORCED
-
 IMAGE_REGISTRY_NAMESPACE ?= angeloxx
 IMAGE_TAG_BASE ?= $(IMAGE_REGISTRY_NAMESPACE)/cilium-haegress-operator
 IMAGE_REGISTRY ?= docker.io
