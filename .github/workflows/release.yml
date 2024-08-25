@@ -33,7 +33,6 @@ jobs:
           IMAGE_REGISTRY_NAMESPACE: angeloxx
           IMAGE_REGISTRY: docker.io
         run: |
-          export IMAGE_TAG_FORCED=${GITHUB_REF/refs\/tags\//)
           make build-image
 
       - name: Build Helm Chart
