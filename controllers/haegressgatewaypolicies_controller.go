@@ -222,6 +222,11 @@ func (r *HAEgressGatewayPolicyReconciler) UpdateOrCreateService(ctx context.Cont
 	if service.Labels == nil {
 		service.Labels = make(map[string]string)
 	}
+	if service.Annotations == nil {
+		service.Annotations = make(map[string]string)
+	}
+	// Avoid L2 announcement by Cilium
+	service.Labels["service.kubernetes.io/service-proxy-name"] = "kubevip-managed-by-cilium-haegess"
 	service.Labels[haegressip.HAEgressGatewayPolicyNamespace] = serviceNamespace
 	service.Labels[haegressip.HAEgressGatewayPolicyName] = haEgressGatewayPolicy.Name
 
