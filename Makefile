@@ -16,6 +16,7 @@ ifneq ($(shell git status --porcelain),)
 endif
 
 IMAGE_TAG := ${VERSION}
+HELM_TAG := ${VERSION}
 ifneq ($(IMAGE_TAG_FORCED),)
 	IMAGE_TAG := ${IMAGE_TAG_FORCED}
 endif
