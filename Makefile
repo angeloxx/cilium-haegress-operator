@@ -17,6 +17,7 @@ endif
 
 IMAGE_TAG := ${VERSION}
 HELM_TAG := ${VERSION}
+
 ifneq ($(IMAGE_TAG_FORCED),)
 	IMAGE_TAG := ${IMAGE_TAG_FORCED}
 endif
@@ -297,6 +298,6 @@ build-helm:
 
 .PHONY: build-helm-upload
 build-helm-upload: build-helm
-	helm push helm/charts/cilium-haegress-operator-$(HELM_TAG_FORCED)-helm.tgz \
+	helm push helm/charts/cilium-haegress-operator-$(HELM_TAG)-helm.tgz \
 		oci://registry-1.docker.io/$(IMAGE_REGISTRY_NAMESPACE)
 

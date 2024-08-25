@@ -1,4 +1,4 @@
-name: release
+name: Release
 on:
   push:
     tags:
@@ -32,16 +32,14 @@ jobs:
         env:
           IMAGE_REGISTRY_NAMESPACE: angeloxx
           IMAGE_REGISTRY: docker.io
-          IMAGE_TAG_FORCED: ${{ github.event.release.tag_name }}
         run: |
+          export IMAGE_TAG_FORCED=${GITHUB_REF/refs\/tags\//)
           make build-image
 
       - name: Build Helm Chart
         env:
           IMAGE_REGISTRY_NAMESPACE: angeloxx
           IMAGE_REGISTRY: docker.io
-          IMAGE_TAG_FORCED: ${{ github.event.release.tag_name }}
-          HELM_TAG_FORCED: ${{ github.event.release.tag_name }}
         run: |
           make helm
           make build-helm-upload
