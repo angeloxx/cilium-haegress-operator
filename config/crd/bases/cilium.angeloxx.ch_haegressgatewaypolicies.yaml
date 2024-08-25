@@ -12,6 +12,8 @@ spec:
     listKind: HAEgressGatewayPolicyList
     plural: haegressgatewaypolicies
     singular: haegressgatewaypolicy
+    shortNames:
+      - haegp
   scope: Cluster
   versions:
   - name: v2
