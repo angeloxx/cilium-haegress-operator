@@ -32,6 +32,9 @@ type HAEgressGatewayPolicyStatus struct {
 
 	// +kubebuilder:validation:Optional
 	IPAddress string `json:"ipAddress,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	LastModifiedTime metav1.Time `json:"lastModifiedTime,omitempty"`
 }
 
 //+kubebuilder:object:root=true
@@ -39,6 +42,7 @@ type HAEgressGatewayPolicyStatus struct {
 //+kubebuilder:resource:scope=Cluster
 //+kubebuilder:printcolumn:name="IP Address",type=string,JSONPath=`.status.ipAddress`
 //+kubebuilder:printcolumn:name="Exit Node",type=string,JSONPath=`.status.exitNode`
+//+kubebuilder:printcolumn:name="Age",type="date",JSONPath=".status.lastModifiedTime",description="Time since last modification"
 
 // haEgressGatewayPolicy is the Schema for the haegressgatewaypolicies API
 type HAEgressGatewayPolicy struct {

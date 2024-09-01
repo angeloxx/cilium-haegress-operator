@@ -65,7 +65,7 @@ jobs:
             
             You can install the chart using the following command:
             ```shell
-            helm upgrade -i cilium-haegress-operator --create-namespace --namespace cilium-haegress-operator oci://registry-1.docker.io/angeloxx/cilium-haegress-operator --version ${{ steps.version.outputs.VERSION }}
+            helm upgrade -i cilium-haegress-operator --create-namespace --namespace cilium-haegress-operator oci://registry-1.docker.io/angeloxx/cilium-haegress-operator --version ${{ steps.version.outputs.VERSION }}-helm
             ```
 
           draft: false

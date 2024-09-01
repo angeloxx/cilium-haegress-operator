@@ -8,6 +8,7 @@ import (
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -44,6 +45,7 @@ func SyncServiceWithCiliumEgressGatewayPolicy(ctx context.Context, r client.Clie
 		}
 		if haEgressGatewayPolicy.Status.IPAddress != service.Status.LoadBalancer.Ingress[0].IP {
 			haEgressGatewayPolicy.Status.IPAddress = service.Status.LoadBalancer.Ingress[0].IP
+			haEgressGatewayPolicy.Status.LastModifiedTime = metav1.Now()
 			if err := r.Status().Update(ctx, haEgressGatewayPolicy); err != nil {
 				logger.Error(err, "unable to update the HAEgressGatewayPolicy with new assigned IP")
 			}
@@ -57,6 +59,7 @@ func SyncServiceWithCiliumEgressGatewayPolicy(ctx context.Context, r client.Clie
 
 	if haEgressGatewayPolicy.Status.ExitNode != currentHost {
 		haEgressGatewayPolicy.Status.ExitNode = currentHost
+		haEgressGatewayPolicy.Status.LastModifiedTime = metav1.Now()
 		if err := r.Status().Update(ctx, haEgressGatewayPolicy); err != nil {
 			logger.Error(err, "unable to update the HAEgressGatewayPolicy with new assigned exitNode")
 		}

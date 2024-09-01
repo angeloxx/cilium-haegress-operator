@@ -21,6 +21,10 @@ spec:
         - jsonPath: .status.exitNode
           name: Exit Node
           type: string
+        - description: Time since last modification
+          jsonPath: .status.lastModifiedTime
+          name: Age
+          type: date
       name: v2
       schema:
         openAPIV3Schema:
@@ -261,6 +265,9 @@ spec:
                 exitNode:
                   type: string
                 ipAddress:
+                  type: string
+                lastModifiedTime:
+                  format: date-time
                   type: string
                 policyCreated:
                   type: boolean
