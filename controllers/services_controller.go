@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	haegressip "github.com/angeloxx/cilium-haegress-operator/pkg"
+	haegressiputil "github.com/angeloxx/cilium-haegress-operator/util"
 	"github.com/cilium/cilium/pkg/hubble/relay/defaults"
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	"github.com/go-logr/logr"
@@ -70,43 +71,8 @@ func (r *ServicesController) Reconcile(ctx context.Context, req ctrl.Request) (c
 		}
 	}
 
-	policyHost := string(ciliumEgressGatewayPolicy.Spec.EgressGateway.NodeSelector.MatchLabels[haegressip.NodeNameAnnotation])
-	currentHost := string(service.Annotations[haegressip.KubeVIPVipHostAnnotation])
+	return haegressiputil.SyncServiceWithCiliumEgressGatewayPolicy(ctx, r.Client, logger, r.Recorder, service, *ciliumEgressGatewayPolicy)
 
-	if len(service.Status.LoadBalancer.Ingress) > 0 {
-		if ciliumEgressGatewayPolicy.Spec.EgressGateway.EgressIP != service.Status.LoadBalancer.Ingress[0].IP {
-			ciliumEgressGatewayPolicy.Spec.EgressGateway.EgressIP = service.Status.LoadBalancer.Ingress[0].IP
-			if err := r.Update(ctx, ciliumEgressGatewayPolicy); err != nil {
-				logger.Error(err, "unable to update the CiliumEgressGatewayPolicy with new assigned IP, retry later")
-				return ctrl.Result{RequeueAfter: haegressip.HAEgressGatewayPolicyChcekRequeueAfter}, nil
-			}
-			logger.Info("Updated CiliumEgressGatewayPolicy with LoadBalancerIP", "LoadBalancerIP", service.Status.LoadBalancer.Ingress[0].IP)
-		}
-	}
-
-	if currentHost == "" {
-		logger.V(1).Info(fmt.Sprintf("Service is still not assigned, ignoring."))
-		return ctrl.Result{}, nil
-	}
-
-	if policyHost == currentHost {
-		logger.V(1).Info(fmt.Sprintf("EgressGatewayPolicy already configured as expected with host %s, ignoring.", currentHost))
-		return ctrl.Result{}, nil
-	}
-
-	logger.V(0).Info(fmt.Sprintf("EgressGatewayPolicy should be updated from %s to %s.", policyHost, currentHost))
-
-	// Modify egressPolicy nodeSelector to match the service
-	patchData := fmt.Sprintf(`{"spec":{"egressGateway":{"nodeSelector":{"matchLabels":{"%s":"%s"}}}}}`, haegressip.NodeNameAnnotation, currentHost)
-
-	logger.V(0).Info(fmt.Sprintf("Patching cilium egress gateway policy %s with host %s", ciliumEgressGatewayPolicy.Name, currentHost))
-	if err := r.Patch(ctx, ciliumEgressGatewayPolicy, client.RawPatch(types.MergePatchType, []byte(patchData))); err != nil {
-		logger.V(0).Info(fmt.Sprintf("Unable to patch cilium egress gateway policy %s", ciliumEgressGatewayPolicy.Name))
-		return ctrl.Result{RequeueAfter: haegressip.LeaseCheckRequeueAfter}, err
-	}
-	r.Recorder.Event(ciliumEgressGatewayPolicy, "Normal", haegressip.EventEgressUpdateReason, fmt.Sprintf("Updated with new nodeSelector %s=%s by %s/%s service", haegressip.NodeNameAnnotation, currentHost, req.Namespace, req.Name))
-
-	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

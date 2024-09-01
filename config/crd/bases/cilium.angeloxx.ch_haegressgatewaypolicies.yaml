@@ -12,11 +12,16 @@ spec:
     listKind: HAEgressGatewayPolicyList
     plural: haegressgatewaypolicies
     singular: haegressgatewaypolicy
-    shortNames:
-      - haegp
   scope: Cluster
   versions:
-  - name: v2
+  - additionalPrinterColumns:
+    - jsonPath: .status.ipAddress
+      name: IP Address
+      type: string
+    - jsonPath: .status.exitNode
+      name: Exit Node
+      type: string
+    name: v2
     schema:
       openAPIV3Schema:
         description: haEgressGatewayPolicy is the Schema for the haegressgatewaypolicies
@@ -253,12 +258,13 @@ spec:
           status:
             description: HAEgressGatewayPolicy defines the observed state of haEgressGatewayPolicy
             properties:
+              exitNode:
+                type: string
+              ipAddress:
+                type: string
               policyCreated:
                 type: boolean
               serviceCreated:
-                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
-                  of cluster Important: Run "make" to regenerate code after modifying
-                  this file'
                 type: boolean
             required:
             - policyCreated

@@ -21,6 +21,7 @@ import (
 	"fmt"
 	haegressv2 "github.com/angeloxx/cilium-haegress-operator/api/v2"
 	haegressip "github.com/angeloxx/cilium-haegress-operator/pkg"
+	haegressiputil "github.com/angeloxx/cilium-haegress-operator/util"
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -31,8 +32,13 @@ import (
 	"k8s.io/client-go/tools/record"
 	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 // HAEgressGatewayPolicyReconciler reconciles a HAEgressGatewayPolicy object
@@ -74,23 +80,6 @@ func (r *HAEgressGatewayPolicyReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, err
 	}
 
-	/*
-		serviceNamespace := r.EgressNamespace
-		if haEgressGatewayPolicy.Annotations[haegressip.HAEgressGatewayPolicyNamespace] != "" {
-			serviceNamespace = haEgressGatewayPolicy.Annotations[haegressip.HAEgressGatewayPolicyNamespace]
-		}
-		leaseExpectedName := fmt.Sprintf("cilium-l2announce-%s-%s",
-			serviceNamespace, haEgressGatewayPolicy.Name)
-		if haEgressGatewayPolicy.Labels[haegressip.HAEgressGatewayPolicyExpectedLeaseName] != leaseExpectedName {
-			haEgressGatewayPolicy.Labels[haegressip.HAEgressGatewayPolicyExpectedLeaseName] = leaseExpectedName
-
-			if err := r.Update(ctx, &haEgressGatewayPolicy); err != nil {
-				log.Error(err, "unable to update HAEgressGatewayPolicy, please check RBAC permissions")
-				return ctrl.Result{RequeueAfter: haegressip.HAEgressGatewayPolicyChcekRequeueAfter}, err
-			}
-		}
-
-	*/
 	if err := r.UpdateOrCreateCiliumEgressGatewayPolicy(ctx, &haEgressGatewayPolicy); err != nil {
 		log.Error(err, "unable to create or update CiliumEgressGatewayPolicy, please check RBAC permissions")
 		return ctrl.Result{RequeueAfter: haegressip.HAEgressGatewayPolicyChcekRequeueAfter}, err
@@ -113,11 +102,6 @@ func (r *HAEgressGatewayPolicyReconciler) UpdateOrCreateCiliumEgressGatewayPolic
 	if haEgressGatewayPolicy.Annotations[haegressip.HAEgressGatewayPolicyNamespace] != "" {
 		serviceNamespace = haEgressGatewayPolicy.Annotations[haegressip.HAEgressGatewayPolicyNamespace]
 	}
-	/*
-		leaseExpectedName := fmt.Sprintf("cilium-l2announce-%s-%s",
-			serviceNamespace, haEgressGatewayPolicy.Name)
-		ciliumEgressGatewayPolicyNew.Labels[haegressip.HAEgressGatewayPolicyExpectedLeaseName] = leaseExpectedName
-	*/
 
 	ciliumEgressGatewayPolicyNew := &ciliumv2.CiliumEgressGatewayPolicy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -154,6 +138,18 @@ func (r *HAEgressGatewayPolicyReconciler) UpdateOrCreateCiliumEgressGatewayPolic
 		if err := controllerutil.SetControllerReference(haEgressGatewayPolicy, ciliumEgressGatewayPolicyNew, r.Scheme); err != nil {
 			return err
 		}
+
+		// If service already exists, reconcile
+		service := &corev1.Service{}
+		err = r.Get(ctx, types.NamespacedName{Name: haEgressGatewayPolicy.Name, Namespace: serviceNamespace}, service)
+		if err == nil {
+			// Call the services reconcile function
+			_, syncError := haegressiputil.SyncServiceWithCiliumEgressGatewayPolicy(ctx, r.Client, logger, r.Recorder, *service, *ciliumEgressGatewayPolicyNew)
+			if syncError != nil {
+				return syncError
+			}
+		}
+
 	} else if err != nil {
 		return err
 	} else {
@@ -226,7 +222,7 @@ func (r *HAEgressGatewayPolicyReconciler) UpdateOrCreateService(ctx context.Cont
 		service.Annotations = make(map[string]string)
 	}
 	// Avoid L2 announcement by Cilium
-	service.Labels["service.kubernetes.io/service-proxy-name"] = "kubevip-managed-by-cilium-haegess"
+	service.Labels[haegressip.KubernetesServiceProxyNameAnnotation] = "kubevip-managed-by-cilium-haegess"
 	service.Labels[haegressip.HAEgressGatewayPolicyNamespace] = serviceNamespace
 	service.Labels[haegressip.HAEgressGatewayPolicyName] = haEgressGatewayPolicy.Name
 
@@ -241,8 +237,10 @@ func (r *HAEgressGatewayPolicyReconciler) UpdateOrCreateService(ctx context.Cont
 	if err != nil && apierrors.IsNotFound(err) {
 		log.Info("Creating a new Service for HAEgressGatewayPolicy", "Service.Namespace", service.Namespace, "Service.Name", service.Name)
 		err = r.Create(ctx, service)
-		r.Recorder.Event(haEgressGatewayPolicy, corev1.EventTypeNormal, "Created", "Service created")
-
+		r.Recorder.Event(haEgressGatewayPolicy,
+			corev1.EventTypeNormal,
+			"Created",
+			fmt.Sprintf("Service %s/%s created", service.Namespace, service.Name))
 		if err != nil {
 			return err
 		}
@@ -271,9 +269,63 @@ func (r *HAEgressGatewayPolicyReconciler) UpdateOrCreateService(ctx context.Cont
 	return nil
 }
 
+func (r *HAEgressGatewayPolicyReconciler) findObjectsForHaegressGatewayPolicy(ctx context.Context, obj client.Object) []reconcile.Request {
+	ownerRefs := obj.GetOwnerReferences()
+	requests := []reconcile.Request{}
+
+	for _, ownerRef := range ownerRefs {
+		if ownerRef.Kind == "HAEgressGatewayPolicy" {
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      ownerRef.Name,
+					Namespace: obj.GetNamespace(),
+				},
+			})
+		}
+	}
+
+	return requests
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *HAEgressGatewayPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&haegressv2.HAEgressGatewayPolicy{}).
+		Watches(
+			&corev1.Service{},
+			handler.EnqueueRequestsFromMapFunc(r.findObjectsForHaegressGatewayPolicy),
+			builder.WithPredicates(predicate.Funcs{
+				DeleteFunc: func(e event.DeleteEvent) bool {
+					return true
+				},
+				CreateFunc: func(e event.CreateEvent) bool {
+					return false
+				},
+				UpdateFunc: func(e event.UpdateEvent) bool {
+					return false
+				},
+				GenericFunc: func(e event.GenericEvent) bool {
+					return false
+				},
+			}),
+		).
+		Watches(
+			&ciliumv2.CiliumEgressGatewayPolicy{},
+			handler.EnqueueRequestsFromMapFunc(r.findObjectsForHaegressGatewayPolicy),
+			builder.WithPredicates(predicate.Funcs{
+				DeleteFunc: func(e event.DeleteEvent) bool {
+					return true
+				},
+				CreateFunc: func(e event.CreateEvent) bool {
+					return false
+				},
+				UpdateFunc: func(e event.UpdateEvent) bool {
+					return false
+				},
+				GenericFunc: func(e event.GenericEvent) bool {
+					return false
+				},
+			}),
+		).
 		Complete(r)
 }

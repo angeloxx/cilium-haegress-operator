@@ -22,20 +22,23 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // HAEgressGatewayPolicy defines the observed state of haEgressGatewayPolicy
 type HAEgressGatewayPolicyStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
 	ServiceCreated bool `json:"serviceCreated"`
 	PolicyCreated  bool `json:"policyCreated"`
+
+	// +kubebuilder:validation:Optional
+	ExitNode string `json:"exitNode,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	IPAddress string `json:"ipAddress,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:scope=Cluster
+//+kubebuilder:printcolumn:name="IP Address",type=string,JSONPath=`.status.ipAddress`
+//+kubebuilder:printcolumn:name="Exit Node",type=string,JSONPath=`.status.exitNode`
 
 // haEgressGatewayPolicy is the Schema for the haegressgatewaypolicies API
 type HAEgressGatewayPolicy struct {
