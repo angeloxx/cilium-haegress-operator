@@ -2,13 +2,13 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ include "kube-vip-cilium-watcher.fullname" . }}
+  name: {{ include "cilium-haegress-operator.fullname" . }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ include "kube-vip-cilium-watcher.fullname" . }}-cr
+  name: {{ include "cilium-haegress-operator.fullname" . }}-cr
 subjects:
   - kind: ServiceAccount
-    name: {{ include "kube-vip-cilium-watcher.serviceAccountName" . }}
+    name: {{ include "cilium-haegress-operator.serviceAccountName" . }}
     namespace: {{ .Release.Namespace }}
 {{ end }}

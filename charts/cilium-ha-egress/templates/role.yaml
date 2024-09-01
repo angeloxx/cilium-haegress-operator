@@ -2,10 +2,13 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{ include "kube-vip-cilium-watcher.fullname" . }}-role
+  name: {{ include "cilium-haegress-operator.fullname" . }}-role
 rules:
   - apiGroups: [""]
     resources: ["configmaps"]
+    verbs: ["get", "list", "watch","create","update","patch","delete"]
+  - apiGroups: [""]
+    resources: ["services"]
     verbs: ["get", "list", "watch","create","update","patch","delete"]
   - apiGroups: [""]
     resources: ["events"]

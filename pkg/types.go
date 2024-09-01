@@ -1,10 +1,15 @@
-package kubevipciliumwatcher
+package haegressip
+
+import "time"
 
 const (
-	ServiceMustBeWatched       = "kube-vip.io/cilium-egress-watcher"
-	KubeVipAnnotation          = "kube-vip.io/vipHost"
-	EgressVipAnnotation        = "kube-vip.io/host"
-	EventServiceUpdateReason   = "EgressAssigned"
-	EventServiceNotFoundReason = "EgressNotFound"
-	EventEgressUpdateReason    = "Updated"
+	HAEgressGatewayPolicyNamespace       = "cilium.angeloxx.ch/haegressgatewaypolicy-namespace"
+	HAEgressGatewayPolicyName            = "cilium.angeloxx.ch/haegressgatewaypolicy-name"
+	NodeNameAnnotation                   = "kubernetes.io/hostname"
+	EventEgressUpdateReason              = "Updated"
+	KubeVIPVipHostAnnotation             = "kube-vip.io/vipHost"
+	KubernetesServiceProxyNameAnnotation = "service.kubernetes.io/service-proxy-name"
+
+	LeaseCheckRequeueAfter                 = 10 * time.Second
+	HAEgressGatewayPolicyChcekRequeueAfter = 10 * time.Second
 )

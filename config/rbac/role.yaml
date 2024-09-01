@@ -12,21 +12,44 @@ rules:
   - create
   - patch
 - apiGroups:
+  - cilium.angeloxx.ch
+  resources:
+  - haegressgatewaypolicies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cilium.angeloxx.ch
+  resources:
+  - haegressgatewaypolicies/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cilium.angeloxx.ch
+  resources:
+  - haegressgatewaypolicies/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - cilium.io
   resources:
   - ciliumegressgatewaypolicies
   verbs:
   - get
-  - list
   - patch
   - update
 - apiGroups:
   - ""
   resources:
-  - services
+  - leases
   verbs:
   - get
   - list
-  - patch
-  - update
   - watch

@@ -1,14 +1,14 @@
-# Default values for kube-vip-cilium-watcher.
+# Default values for cilium-haegress-operator.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
 replicaCount: 1
 
 image:
-  repository: angeloxx/kube-vip-cilium-watcher
+  repository: angeloxx/cilium-haegress-operator
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "0.0.6"
+  tag: "0.0.6-next-4aa706d-20240819-dirty"
 
 # Can be one of 'debug', 'info', 'error'
 logLevel: "info"

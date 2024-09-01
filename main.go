@@ -31,7 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	"github.com/angeloxx/kube-vip-cilium-watcher/controllers"
+	ciliumv1alpha1 "github.com/angeloxx/cilium-haegress-operator/api/v2"
+	"github.com/angeloxx/cilium-haegress-operator/controllers"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -47,6 +48,7 @@ func init() {
 		return
 	}
 
+	utilruntime.Must(ciliumv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -54,11 +56,21 @@ func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
+	var haegressNamespace string
+	var loadBalancerClass string
+	var k8sClientQPS int
+	var k8sClientBurst int
+
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	flag.StringVar(&haegressNamespace, "egress-default-namespace", "egress-system", "The namespace where the services will be created if no namespaces were specified")
+	flag.StringVar(&loadBalancerClass, "load-balancer-class", "kube-vip.io/kube-vip-class", "The LoadBalancer class to use for the services")
+
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
+	flag.IntVar(&k8sClientQPS, "k8s-client-qps", 20, "The maximum QPS to the Kubernetes API server")
+	flag.IntVar(&k8sClientBurst, "k8s-client-burst", 100, "The maximum burst for throttle to the Kubernetes API server")
 	opts := zap.Options{
 		Development: false,
 	}
@@ -69,14 +81,18 @@ func main() {
 
 	ctrl.Log.V(1).Info("Test debug")
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	config := ctrl.GetConfigOrDie()
+	config.QPS = float32(k8sClientQPS)
+	config.Burst = k8sClientBurst
+
+	mgr, err := ctrl.NewManager(config, ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
 			BindAddress: metricsAddr,
 		},
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "kube-vip-cilium-observer.angeloxx.ch",
+		LeaderElectionID:       "cilium-haegress-operator.angeloxx.ch",
 
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
@@ -95,24 +111,28 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.ServiceReconciler{
-		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("Service"),
-		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("kube-vip-cilium-watcher"),
+	if err = (&controllers.HAEgressGatewayPolicyReconciler{
+		Client:            mgr.GetClient(),
+		Log:               ctrl.Log.WithName("controllers").WithName("HAEgressGatewayPolicy"),
+		Scheme:            mgr.GetScheme(),
+		Recorder:          mgr.GetEventRecorderFor("cilium-haegress-operator"),
+		EgressNamespace:   haegressNamespace,
+		LoadBalancerClass: loadBalancerClass,
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Unable to create controller Service")
+		setupLog.Error(err, "unable to create controller", "controller", "HAEgressGatewayPolicy")
 		os.Exit(1)
 	}
-	if err = (&controllers.CiliumEgressGatewayPolicyReconciler{
-		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("CiliumEgressGatewayPolicy"),
-		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("kube-vip-cilium-watcher"),
+	if err = (&controllers.ServicesController{
+		Client:          mgr.GetClient(),
+		Log:             ctrl.Log.WithName("controllers").WithName("Services"),
+		Scheme:          mgr.GetScheme(),
+		Recorder:        mgr.GetEventRecorderFor("cilium-haegress-operator"),
+		EgressNamespace: haegressNamespace,
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller CiliumEgressGatewayPolicy")
+		setupLog.Error(err, "unable to create controller", "controller", "Services")
 		os.Exit(1)
 	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

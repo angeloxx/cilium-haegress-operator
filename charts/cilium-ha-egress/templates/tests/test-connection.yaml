@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "cilium-haegress-operator.fullname" . }}-test-connection"
+  labels:
+    {{- include "cilium-haegress-operator.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args: ['{{ include "cilium-haegress-operator.fullname" . }}:8081/readyz']
+  restartPolicy: Never

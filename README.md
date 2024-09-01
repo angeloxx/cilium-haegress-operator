@@ -1,12 +1,14 @@
-![Logo](https://github.com/angeloxx/kube-vip-cilium-watcher/raw/main/docs/img/kube-vip-cilium-watcher_mini.png)
+![Logo](https://github.com/angeloxx/cilium-haegress-operator/raw/main/docs/img/cilium-haegress-operator_mini.png)
 
-# kube-vip-cilium-watcher
+# cilium-haegress-operator
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+
 This operator is used in an environment where you want to use Cilium as Ingress and Egress traffic manager. 
 
 ## Description
-Due the limitation of CiliumEgressGatewayPolicy, it is not possible to implement freely an HA solution where the policy defines
-two egress IP or the IP is moved automatically from a node to another.
-You can use kube-vip to create a virtual IP that is moved from a node to another in case of failure. When kube-vip
+Due the limitation of CiliumEgressGatewayPolicy, it is not possible to implement freely an HA solution where the policy 
+defines two egress IP or the IP is moved automatically from a node to another.
+You can use this project to create a virtual IP that is moved from a node to another in case of failure. When kube-vip
 associate a service to a node, it annotates associated service with kube-vip.io/vipHost: <node-name>. This operator
 watches for this annotation and updates the CiliumEgressPolicy to select the node where the service is running and
 implement a floating egress ip.
@@ -16,92 +18,86 @@ implement a floating egress ip.
 You can use Helm and the default settings to install the operator:
 
 ```shell
-helm upgrade -i kube-vip-watcher --create-namespace --namespace kube-vip-watcher
-     oci://registry-1.docker.io/angeloxx/kube-vip-cilium-watcher --version 0.0.6-helm
+helm upgrade -i cilium-haegress-operator --create-namespace --namespace egress-management
+     oci://registry-1.docker.io/angeloxx/cilium-haegress-operator --version x.x.x-helm
 ```
 
 ## Configure
 
-Configure the service as a virtual ip managed by kuve-vip. The **Service** must be of type **LoadBalancer** and set
-
-    spec.loadBalancerClass: "kube-vip.io/kube-vip-class"
-
-in order to let kube-vip manage the service. Additionally the annotation:
-
-    kube-vip.io/cilium-egress-watcher: "true"
-
-has to be added to the **Service**. You have to add to **all nodes that runs kube-vip** the label:
-
-    kube-vip.io/host: "<host-shortname>"
-
-The CiliumEgressGatewayPolicy(es) that matches the service loadBalancerIps with spec.egressGateway.egressIP will
-be reconfigured with a spec.egressGateway.nodeSelector that matches the "kube-vip.io/host" label in order to 
-route the traffic to that node.
-
-### Sample
-
-A sample service is:
+You can configure a new HAEgressGatewayPolicy using the following yaml:
 
 ```yaml
-apiVersion: v1
-kind: Service
+apiVersion: cilium.angeloxx.ch/v2
+kind: HAEgressGatewayPolicy
 metadata:
-  name: egress-192-168-1-1
-  namespace: kube-vip-tier-1
   annotations:
-    kube-vip.io/cilium-egress-watcher: "true"
+    kube-vip.io/loadbalancerIPs: 192.168.152.10
+  name: egress-192-168-152-10
 spec:
-  type: LoadBalancer
-  loadBalancerClass: kube-vip.io/kube-vip-class 
-  loadBalancerIP: 192.168.1.1
-  selector:
-    app: pleaseDontMatch
-  ports: []
-```
-
-and create the load balancer, managed by kube-vip, with the selected IP as egress. I suggest to create dedicate a namespace
-to kube-vip instance (or more instances, if you have to publish these services in different networks) and create the
-services in that namespace. The annotation activate the watcher for the service.
-
-A sample CiliumEgressGatewayPolicy is:
-
-```yaml
-apiVersion: cilium.io/v2
-kind: CiliumEgressGatewayPolicy
-metadata:
-  name: external-dns
-spec:
-  selectors:
-  - podSelector:
-      matchLabels:
-        io.kubernetes.pod.namespace: external-dns
   destinationCIDRs:
-  - "0.0.0.0/0"
-
+    - 0.0.0.0/0
   egressGateway:
     nodeSelector:
       matchLabels:
-        my/nodes: egress-nodes
-    egressIP: 192.168.1.1
+        your.company/egress-node: "true"
+  selectors:
+    - podSelector:
+        matchLabels:
+          io.kubernetes.pod.namespace: my-beautiful-namespace
 ```
+Using the 
 
-When kube-vip assigns the IP to a node, the kube-vip-cilium-watcher operator will update the egressGateway.nodeSelector in 
-order to match the node, using kube-vip.io/host label. You can associate multiple CiliumEgressGatewayPolicy to the same
-IP, the operator will support all of them.
+    kube-vip.io/loadbalancerIPs
+
+annotation kube-vip will assign that IP but you can also omit the annotation and kube-vip will assign an IP from the
+configured pool. The operator will create:
+
+* a CiliumEgressGatewayPolicy named <service-namespace>-<haegressgatewaypolicy-name>
+* a Service managed by Kube-VIP, with the same name in the operator namespace 
+
+if you want to change the service namespace, you can use the annotation:
+
+    cilium.angeloxx.ch/haegressgatewaypolicy-namespace: the-egress-namespace
+
+and the service will be created in that namespace.
+
+The Operator will link the service and the CiliumEgressGatewayPolicy; when the IP address is assigned, it will be configured as EgressIP and
+when the services is assigned to a specific node, the CiliumEgressGatewayPolicy nodeSelector will be updated. 
+
+All these three objects will be linked: if the HAEgressGatewayPolicy is deleted, the service and the CiliumEgressGatewayPolicy will be deleted too.
+If the policy or the service is accidentally deleted, the operator will recreate and synchronize them.
+
+## # Kubectl
+
+You can check the status of the HAEgressIPs status using kubectl:
+
+```shell
+user@host:> kubectl get Haegressgatewaypolicies
+NAME                     IP ADDRESS       EXIT NODE                      AGE
+egress-192-168-152-10    192.168.152.10   egress-node-004.domain.local   77m
+egress-192-168-152-11    192.168.152.11   egress-node-003.domain.local   76m
+egress-192-168-152-12    192.168.152.12   egress-node-004.domain.local   76m
+egress-192-168-152-13    192.168.152.13   egress-node-004.domain.local   77m
+egress-192-168-152-15    192.168.152.15   egress-node-004.domain.local   76m
+egress-192-168-152-18    192.168.152.18   egress-node-004.domain.local   76m
+egress-192-168-152-19    192.168.152.19   egress-node-004.domain.local   77m
+```
+The status will report the name of the resource, the assigned IP by kube-vip, the node where the IP is assigned and when the last change has occurred.
 
 ## License
 
-Copyright 2024 Angelo Conforti.
+    Copyright (C) 2024 Angelo Conforti.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as
+    published by the Free Software Foundation, either version 3 of the
+    License, or (at your option) any later version.
 
-    http://www.apache.org/licenses/LICENSE-2.0
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 

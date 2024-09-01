@@ -1,0 +1,22 @@
+{{ if .Values.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "cilium-haegress-operator.fullname" . }}-cr
+rules:
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create","patch"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch","create","update","patch","delete"]
+  - apiGroups: ["cilium.io"]
+    resources: ["ciliumegressgatewaypolicies"]
+    verbs: ["get", "list", "watch", "create", "update", "patch","delete"]
+  - apiGroups: ["cilium.angeloxx.ch"]
+    resources: ["haegressgatewaypolicies"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: ["cilium.angeloxx.ch"]
+    resources: ["haegressgatewaypolicies/status"]
+    verbs: ["update", "patch"]
+{{ end }}

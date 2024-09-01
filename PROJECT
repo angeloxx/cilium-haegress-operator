@@ -8,8 +8,8 @@ layout:
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
-projectName: kube-vip-cilium-watcher
-repo: github.com/angeloxx/kube-vip-cilium-watcher
+projectName: cilium-haegress-operator
+repo: github.com/angeloxx/cilium-haegress-operator
 resources:
 - api:
     crdVersion: v1
@@ -17,11 +17,20 @@ resources:
   controller: true
   domain: angeloxx.ch
   kind: Service
-  path: github.com/angeloxx/kube-vip-cilium-watcher/api/v1
+  path: github.com/angeloxx/cilium-haegress-operator/api/v1
   version: v1
 - controller: true
   domain: angeloxx.ch
   group: angeloxx.ch
   kind: CiliumEgressGatewayPolicy
   version: v2
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: angeloxx.ch
+  group: cilium.angeloxx.ch
+  kind: haEgressGatewayPolicy
+  path: github.com/angeloxx/cilium-haegress-operator/api/v1alpha1
+  version: v1alpha1
 version: "3"

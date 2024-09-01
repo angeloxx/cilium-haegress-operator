@@ -15,8 +15,18 @@ ifneq ($(shell git status --porcelain),)
 	VERSION := $(VERSION)-dirty
 endif
 
+IMAGE_TAG := ${VERSION}
+HELM_TAG := ${VERSION}
+
+ifneq ($(IMAGE_TAG_FORCED),)
+	IMAGE_TAG := ${IMAGE_TAG_FORCED}
+endif
+ifneq ($(HELM_TAG_FORCED),)
+	HELM_TAG := ${HELM_TAG_FORCED}
+endif
+
 IMAGE_REGISTRY_NAMESPACE ?= angeloxx
-IMAGE_TAG_BASE ?= $(IMAGE_REGISTRY_NAMESPACE)/kube-vip-cilium-watcher
+IMAGE_TAG_BASE ?= $(IMAGE_REGISTRY_NAMESPACE)/cilium-haegress-operator
 IMAGE_REGISTRY ?= docker.io
 BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
 BUNDLE_GEN_FLAGS ?= -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
@@ -106,7 +116,7 @@ test: manifests generate fmt vet envtest ## Run tests.
 
 .PHONY: build
 build: manifests generate fmt vet ## Build manager binary.
-	go build -o bin/kube-vip-cilium-watcher main.go
+	go build -o bin/cilium-haegress-operator main.go
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
@@ -126,11 +136,10 @@ docker-push: ## Push docker image with the manager.
 
 PLATFORMS ?= linux/arm64,linux/amd64
 .PHONY: build-image
-build-image: ko vulncheck
+build-image: ko # vulncheck
 	KO_DOCKER_REPO=${IMAGE} \
-    VERSION=${VERSION} \
-    ko build --tags ${VERSION} --bare --sbom ${IMG_SBOM} \
-      --image-label org.opencontainers.image.source="https://github.com/angeloxx/kube-vip-cilium-watcher" \
+    ko build --tags ${IMAGE_TAG} --bare --sbom ${IMG_SBOM} \
+      --image-label org.opencontainers.image.source="https://github.com/angeloxx/cilium-haegress-operator" \
       --image-label org.opencontainers.image.revision=$(shell git rev-parse HEAD) \
       --platform=${PLATFORMS}  --push=true .
 
@@ -280,15 +289,15 @@ helm:
 
 .PHONY: build-helm
 build-helm:
-	sed -i 's|tag: ".*"|tag: "$(VERSION)"|g' charts/kube-vip-cilium-watcher/values.yaml
-	sed -i 's|--version .*-helm|--version $(VERSION)-helm|g' README.md
-	helm kubeconform charts/kube-vip-cilium-watcher
-	helm package charts/kube-vip-cilium-watcher -d helm/charts --version $(VERSION)-helm
+	sed -i 's|tag: ".*"|tag: "${IMAGE_TAG}"|g' charts/cilium-ha-egress/values.yaml
+	sed -i 's|--version .*-helm|--version ${HELM_TAG}-helm|g' README.md
+	helm kubeconform charts/cilium-ha-egress --skip CustomResourceDefinition
+	helm package charts/cilium-ha-egress -d helm/charts --version ${HELM_TAG}-helm
 
-	helm repo index charts/charts --url https://angeloxx.github.io/kube-vip-cilium-watcher
+	helm repo index charts/charts --url https://angeloxx.github.io/cilium-haegress-operator
 
 .PHONY: build-helm-upload
 build-helm-upload: build-helm
-	helm push helm/charts/kube-vip-cilium-watcher-$(VERSION)-helm.tgz \
+	helm push helm/charts/cilium-haegress-operator-$(HELM_TAG)-helm.tgz \
 		oci://registry-1.docker.io/$(IMAGE_REGISTRY_NAMESPACE)
 
