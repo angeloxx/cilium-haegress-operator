@@ -45,6 +45,12 @@ jobs:
           make helm
           make build-helm-upload
 
+      - name: Extract version
+        id: version
+        run: |
+          REF=${{ github.ref }}
+          VERSION=${REF#refs/tags/v}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Create Release
         id: create_release
@@ -56,5 +62,11 @@ jobs:
           release_name: Release ${{ github.ref }}
           body: |
             ${{ github.event.head_commit.message }}
+            
+            You can install the chart using the following command:
+            ```shell
+            helm upgrade -i cilium-haegress-operator --create-namespace --namespace cilium-haegress-operator oci://registry-1.docker.io/angeloxx/cilium-haegress-operator --version ${{ steps.version.outputs.VERSION }}
+            ```
+
           draft: false
           prerelease: false
