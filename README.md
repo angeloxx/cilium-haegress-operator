@@ -3,10 +3,10 @@
 # cilium-haegress-operator
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
-This operator is used in an environment where you want to use Cilium as Ingress and Egress traffic manager. 
+This operator is used in an environment where you want to use Cilium as Ingress and Egress traffic manager.
 
 ## Description
-Due the limitation of CiliumEgressGatewayPolicy, it is not possible to implement freely an HA solution where the policy 
+Due the limitation of CiliumEgressGatewayPolicy, it is not possible to implement freely an HA solution where the policy
 defines two egress IP or the IP is moved automatically from a node to another.
 You can use this project to create a virtual IP that is moved from a node to another in case of failure. When kube-vip
 associate a service to a node, it annotates associated service with kube-vip.io/vipHost: <node-name>. This operator
@@ -45,7 +45,7 @@ spec:
         matchLabels:
           io.kubernetes.pod.namespace: my-beautiful-namespace
 ```
-Using the 
+Using the
 
     kube-vip.io/loadbalancerIPs
 
@@ -53,7 +53,7 @@ annotation kube-vip will assign that IP but you can also omit the annotation and
 configured pool. The operator will create:
 
 * a CiliumEgressGatewayPolicy named <service-namespace>-<haegressgatewaypolicy-name>
-* a Service managed by Kube-VIP, with the same name in the operator namespace 
+* a Service managed by Kube-VIP, with the same name in the operator namespace
 
 if you want to change the service namespace, you can use the annotation:
 
@@ -61,8 +61,15 @@ if you want to change the service namespace, you can use the annotation:
 
 and the service will be created in that namespace.
 
+You can override the `spec.loadBalancerClass` set on the generated Service by adding:
+
+    service.kubernetes.io/load-balancer-class: your-load-balancer-class
+
+to the HAEgressGatewayPolicy annotations. If omitted, the operator will use the default class configured at startup.
+
 The Operator will link the service and the CiliumEgressGatewayPolicy; when the IP address is assigned, it will be configured as EgressIP and
-when the services is assigned to a specific node, the CiliumEgressGatewayPolicy nodeSelector will be updated. 
+when the services is assigned to a specific node, the CiliumEgressGatewayPolicy nodeSelector will be updated.
+
 
 All these three objects will be linked: if the HAEgressGatewayPolicy is deleted, the service and the CiliumEgressGatewayPolicy will be deleted too.
 If the policy or the service is accidentally deleted, the operator will recreate and synchronize them.
@@ -100,4 +107,3 @@ The status will report the name of the resource, the assigned IP by kube-vip, th
 
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
-

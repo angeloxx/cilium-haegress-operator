@@ -210,6 +210,16 @@ func (r *HAEgressGatewayPolicyReconciler) UpdateOrCreateService(ctx context.Cont
 		serviceNamespace = haEgressGatewayPolicy.Annotations[haegressip.HAEgressGatewayPolicyNamespace]
 	}
 
+	loadBalancerClass := r.LoadBalancerClass
+	if haEgressGatewayPolicy.Annotations[haegressip.HAEgressGatewayPolicyLoadBalancerClassAnnotation] != "" {
+		loadBalancerClass = haEgressGatewayPolicy.Annotations[haegressip.HAEgressGatewayPolicyLoadBalancerClassAnnotation]
+	}
+
+	var loadBalancerClassPtr *string
+	if loadBalancerClass != "" {
+		loadBalancerClassPtr = &loadBalancerClass
+	}
+
 	// @TODO: check if target namespace exists
 
 	// Define the service and copy all annotations from the HAEgressGatewayPolicy instance
@@ -221,7 +231,7 @@ func (r *HAEgressGatewayPolicyReconciler) UpdateOrCreateService(ctx context.Cont
 			Annotations: haEgressGatewayPolicy.Annotations,
 		},
 		Spec: corev1.ServiceSpec{
-			LoadBalancerClass: &r.LoadBalancerClass,
+			LoadBalancerClass: loadBalancerClassPtr,
 			Ports: []corev1.ServicePort{
 				{
 					Name:     "nope",
@@ -279,9 +289,23 @@ func (r *HAEgressGatewayPolicyReconciler) UpdateOrCreateService(ctx context.Cont
 
 			return nil
 		} else {
+			needsUpdate := false
+
 			if !reflect.DeepEqual(found.Spec.Selector, service.Spec.Selector) {
+				found.Spec.Selector = service.Spec.Selector
+				needsUpdate = true
+			}
+
+			if (found.Spec.LoadBalancerClass == nil && loadBalancerClassPtr != nil) ||
+				(found.Spec.LoadBalancerClass != nil && loadBalancerClassPtr == nil) ||
+				(found.Spec.LoadBalancerClass != nil && loadBalancerClassPtr != nil && *found.Spec.LoadBalancerClass != *loadBalancerClassPtr) {
+				found.Spec.LoadBalancerClass = loadBalancerClassPtr
+				needsUpdate = true
+			}
+
+			if needsUpdate {
 				log.Info("Updating Service already controlled by HAEgressGatewayPolicy", "Service.Namespace", found.Namespace, "Service.Name", found.Name)
-				err = r.Update(ctx, service)
+				err = r.Update(ctx, found)
 				if err != nil {
 					return err
 				}
