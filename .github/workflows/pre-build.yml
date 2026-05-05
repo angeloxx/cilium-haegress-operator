@@ -10,7 +10,7 @@ jobs:
     if: contains(join(github.event.pull_request.labels.*.name, ','), 'pre-release')
     strategy:
       matrix:
-        go-version: [ '1.25.1' ]
+        go-version: [ '1.26.2' ]
 
     steps:
       - uses: actions/checkout@v6
