@@ -3,7 +3,7 @@ module github.com/angeloxx/cilium-haegress-operator
 go 1.26.2
 
 require (
-	github.com/cilium/cilium v1.19.3
+	github.com/cilium/cilium v1.19.4
 	github.com/go-logr/logr v1.4.3
 	github.com/onsi/ginkgo/v2 v2.28.3
 	github.com/onsi/gomega v1.40.0
