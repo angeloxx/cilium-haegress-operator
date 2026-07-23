@@ -21,7 +21,7 @@ jobs:
           go-version: ${{ matrix.go-version }}
 
       - name: Setup Ko
-        uses: ko-build/setup-ko@v0.9
+        uses: ko-build/setup-ko@v0.10
       - name: Set up Kubeconform
         uses: bmuschko/setup-kubeconform@v1
 
