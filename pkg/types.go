@@ -9,6 +9,7 @@ const (
 	NodeNameAnnotation                               = "kubernetes.io/hostname"
 	EventEgressUpdateReason                          = "Updated"
 	KubeVIPVipHostAnnotation                         = "kube-vip.io/vipHost"
+	KubeVIPAllowReconcileWithoutEndpoints			 = "kube-vip.io/allow-reconcile-without-endpoints"
 	KubernetesServiceProxyNameAnnotation             = "service.kubernetes.io/service-proxy-name"
 
 	LeaseCheckRequeueAfter                 = 10 * time.Second
