@@ -258,6 +258,10 @@ func (r *HAEgressGatewayPolicyReconciler) UpdateOrCreateService(ctx context.Cont
 	service.Labels[haegressip.KubernetesServiceProxyNameAnnotation] = "kubevip-managed-by-cilium-haegess"
 	service.Labels[haegressip.HAEgressGatewayPolicyNamespace] = serviceNamespace
 	service.Labels[haegressip.HAEgressGatewayPolicyName] = haEgressGatewayPolicy.Name
+	// The service intentionally has no endpoints, kube-vip >= v1.2.1 only 
+	// reconciles (and BGP-advertises) endpointless services when this
+	// annotation is present
+	service.Annotations[haegressip.KubeVIPAllowReconcileWithoutEndpoints] = "true"
 
 	// Set HAEgressGatewayPolicy instance as the owner and controller
 	if err := controllerutil.SetControllerReference(haEgressGatewayPolicy, service, r.Scheme); err != nil {
@@ -300,6 +304,14 @@ func (r *HAEgressGatewayPolicyReconciler) UpdateOrCreateService(ctx context.Cont
 				(found.Spec.LoadBalancerClass != nil && loadBalancerClassPtr == nil) ||
 				(found.Spec.LoadBalancerClass != nil && loadBalancerClassPtr != nil && *found.Spec.LoadBalancerClass != *loadBalancerClassPtr) {
 				found.Spec.LoadBalancerClass = loadBalancerClassPtr
+				needsUpdate = true
+			}
+
+			if found.Annotations[haegressip.KubeVIPAllowReconcileWithoutEndpoints] != "true" {
+				if found.Annotations == nil {
+					found.Annotations = make(map[string]string)
+				}
+				found.Annotations[haegressip.KubeVIPAllowReconcileWithoutEndpoints] = "true"
 				needsUpdate = true
 			}
 
