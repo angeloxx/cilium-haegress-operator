@@ -4,7 +4,7 @@ go 1.26.2
 
 require (
 	github.com/cilium/cilium v1.19.6
-	github.com/go-logr/logr v1.4.3
+	github.com/go-logr/logr v1.4.4
 	github.com/onsi/ginkgo/v2 v2.31.0
 	github.com/onsi/gomega v1.42.1
 	k8s.io/api v0.36.3
