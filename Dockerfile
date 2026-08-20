@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM golang:1.26.6 as builder
+FROM golang:1.27.0 as builder
 ARG TARGETOS
 ARG TARGETARCH
 
@@ -34,7 +34,7 @@ USER 65532:65532
 
 ENTRYPOINT ["/cilium-haegress-operator"]
 # Build the manager binary
-FROM golang:1.26.6 as builder
+FROM golang:1.27.0 as builder
 ARG TARGETOS
 ARG TARGETARCH
 
@@ -69,7 +69,7 @@ USER 65532:65532
 
 ENTRYPOINT ["/cilium-haegress-operator"]
 # Build the manager binary
-FROM golang:1.26.6 as builder
+FROM golang:1.27.0 as builder
 ARG TARGETOS
 ARG TARGETARCH
 
@@ -104,7 +104,7 @@ USER 65532:65532
 
 ENTRYPOINT ["/cilium-haegress-operator"]
 # Build the manager binary
-FROM golang:1.26.6 as builder
+FROM golang:1.27.0 as builder
 ARG TARGETOS
 ARG TARGETARCH
 
