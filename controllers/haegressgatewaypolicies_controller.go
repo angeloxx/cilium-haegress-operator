@@ -220,6 +220,9 @@ func (r *HAEgressGatewayPolicyReconciler) UpdateOrCreateService(ctx context.Cont
 		loadBalancerClassPtr = &loadBalancerClass
 	}
 
+	// The service only carries the egress IP, so no traffic ever needs a NodePort
+	allocateLoadBalancerNodePorts := false
+
 	// @TODO: check if target namespace exists
 
 	// Define the service and copy all annotations from the HAEgressGatewayPolicy instance
@@ -231,7 +234,8 @@ func (r *HAEgressGatewayPolicyReconciler) UpdateOrCreateService(ctx context.Cont
 			Annotations: haEgressGatewayPolicy.Annotations,
 		},
 		Spec: corev1.ServiceSpec{
-			LoadBalancerClass: loadBalancerClassPtr,
+			LoadBalancerClass:             loadBalancerClassPtr,
+			AllocateLoadBalancerNodePorts: &allocateLoadBalancerNodePorts,
 			Ports: []corev1.ServicePort{
 				{
 					Name:     "nope",
@@ -305,6 +309,19 @@ func (r *HAEgressGatewayPolicyReconciler) UpdateOrCreateService(ctx context.Cont
 				(found.Spec.LoadBalancerClass != nil && loadBalancerClassPtr != nil && *found.Spec.LoadBalancerClass != *loadBalancerClassPtr) {
 				found.Spec.LoadBalancerClass = loadBalancerClassPtr
 				needsUpdate = true
+			}
+
+			// Disable NodePort allocation on services created before it was set, already allocated
+			// NodePorts are only released when they are removed from the ports explicitly
+			if found.Spec.AllocateLoadBalancerNodePorts == nil || *found.Spec.AllocateLoadBalancerNodePorts {
+				found.Spec.AllocateLoadBalancerNodePorts = &allocateLoadBalancerNodePorts
+				needsUpdate = true
+			}
+			for i := range found.Spec.Ports {
+				if found.Spec.Ports[i].NodePort != 0 {
+					found.Spec.Ports[i].NodePort = 0
+					needsUpdate = true
+				}
 			}
 
 			if found.Annotations[haegressip.KubeVIPAllowReconcileWithoutEndpoints] != "true" {
