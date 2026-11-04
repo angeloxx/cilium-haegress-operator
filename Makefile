@@ -285,7 +285,11 @@ vulncheck:
 	govulncheck ./...
 
 helm:
-	helm plugin install https://github.com/melmorabity/helm-kubeconform --version 0.6.4.1 --verify=false
+	@if helm plugin install --help 2>&1 | grep -q -- '--verify'; then \
+		helm plugin install https://github.com/melmorabity/helm-kubeconform --version 0.6.4.1 --verify=false; \
+	else \
+		helm plugin install https://github.com/melmorabity/helm-kubeconform --version 0.6.4.1; \
+	fi
 
 .PHONY: build-helm
 build-helm:
