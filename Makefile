@@ -284,14 +284,16 @@ vulncheck:
 	go install golang.org/x/vuln/cmd/govulncheck@latest
 	govulncheck ./...
 
+KUBECONFORM_VERSION ?= v0.6.7
+
 helm:
-	helm plugin install https://github.com/melmorabity/helm-kubeconform --version 0.6.4.1
+	go install github.com/yannh/kubeconform/cmd/kubeconform@$(KUBECONFORM_VERSION)
 
 .PHONY: build-helm
 build-helm:
 	sed -i 's|tag: ".*"|tag: "${IMAGE_TAG}"|g' charts/cilium-ha-egress/values.yaml
 	sed -i 's|--version .*-helm|--version ${HELM_TAG}-helm|g' README.md
-	helm kubeconform charts/cilium-ha-egress --skip CustomResourceDefinition
+	helm template charts/cilium-ha-egress | $$(go env GOPATH)/bin/kubeconform -strict -summary -skip CustomResourceDefinition
 	helm package charts/cilium-ha-egress -d helm/charts --version ${HELM_TAG}-helm
 
 	helm repo index charts/charts --url https://angeloxx.github.io/cilium-haegress-operator
@@ -300,4 +302,3 @@ build-helm:
 build-helm-upload: build-helm
 	helm push helm/charts/cilium-haegress-operator-$(HELM_TAG)-helm.tgz \
 		oci://registry-1.docker.io/$(IMAGE_REGISTRY_NAMESPACE)
-
