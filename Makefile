@@ -285,7 +285,7 @@ vulncheck:
 	govulncheck ./...
 
 helm:
-	helm plugin install https://github.com/melmorabity/helm-kubeconform --version 0.6.4.1
+	helm plugin install https://github.com/melmorabity/helm-kubeconform --version 0.6.4.1 --verify=false
 
 .PHONY: build-helm
 build-helm:
@@ -300,4 +300,3 @@ build-helm:
 build-helm-upload: build-helm
 	helm push helm/charts/cilium-haegress-operator-$(HELM_TAG)-helm.tgz \
 		oci://registry-1.docker.io/$(IMAGE_REGISTRY_NAMESPACE)
-
