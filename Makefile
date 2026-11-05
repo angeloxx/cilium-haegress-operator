@@ -281,7 +281,7 @@ ko:
 	scripts/install-ko.sh
 
 vulncheck:
-	go install golang.org/x/vuln/cmd/govulncheck@latest
+	GOTOOLCHAIN=go1.27.3 go install golang.org/x/vuln/cmd/govulncheck@latest
 	govulncheck ./...
 
 KUBECONFORM_VERSION ?= v0.6.7
